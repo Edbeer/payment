@@ -12,7 +12,7 @@ service AuthService {
     rpc GetAccount(GetAccountRequest) returns (stream Account) {};
     rpc UpdateAccount(Account) returns (Account) {};
     rpc DeleteAccount(Account) returns (DeleteResponse) {};
-    rpc GetAccountByID(stream GetAccountByIDRequest) returns (stream Account) {};
+    rpc GetAccountByID(Account) returns (Account) {};
     rpc DepositAccount(Account) returns (Account) {};
 }
 
