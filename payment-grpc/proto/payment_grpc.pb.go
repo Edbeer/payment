@@ -22,10 +22,10 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PaymentServiceClient interface {
-	CreatePayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*StatementResponse, error)
-	CapturePayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*StatementResponse, error)
-	CancelPayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*StatementResponse, error)
-	RefundPayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*StatementResponse, error)
+	CreatePayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*Statement, error)
+	CapturePayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*Statement, error)
+	CancelPayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*Statement, error)
+	RefundPayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*Statement, error)
 	GetStatemet(ctx context.Context, in *StatementRequest, opts ...grpc.CallOption) (PaymentService_GetStatemetClient, error)
 }
 
@@ -37,8 +37,8 @@ func NewPaymentServiceClient(cc grpc.ClientConnInterface) PaymentServiceClient {
 	return &paymentServiceClient{cc}
 }
 
-func (c *paymentServiceClient) CreatePayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*StatementResponse, error) {
-	out := new(StatementResponse)
+func (c *paymentServiceClient) CreatePayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*Statement, error) {
+	out := new(Statement)
 	err := c.cc.Invoke(ctx, "/payment.PaymentService/CreatePayment", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (c *paymentServiceClient) CreatePayment(ctx context.Context, in *Payment, o
 	return out, nil
 }
 
-func (c *paymentServiceClient) CapturePayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*StatementResponse, error) {
-	out := new(StatementResponse)
+func (c *paymentServiceClient) CapturePayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*Statement, error) {
+	out := new(Statement)
 	err := c.cc.Invoke(ctx, "/payment.PaymentService/CapturePayment", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -55,8 +55,8 @@ func (c *paymentServiceClient) CapturePayment(ctx context.Context, in *Payment, 
 	return out, nil
 }
 
-func (c *paymentServiceClient) CancelPayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*StatementResponse, error) {
-	out := new(StatementResponse)
+func (c *paymentServiceClient) CancelPayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*Statement, error) {
+	out := new(Statement)
 	err := c.cc.Invoke(ctx, "/payment.PaymentService/CancelPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -64,8 +64,8 @@ func (c *paymentServiceClient) CancelPayment(ctx context.Context, in *Payment, o
 	return out, nil
 }
 
-func (c *paymentServiceClient) RefundPayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*StatementResponse, error) {
-	out := new(StatementResponse)
+func (c *paymentServiceClient) RefundPayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*Statement, error) {
+	out := new(Statement)
 	err := c.cc.Invoke(ctx, "/payment.PaymentService/RefundPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func (c *paymentServiceClient) GetStatemet(ctx context.Context, in *StatementReq
 }
 
 type PaymentService_GetStatemetClient interface {
-	Recv() (*StatementResponse, error)
+	Recv() (*Statement, error)
 	grpc.ClientStream
 }
 
@@ -97,8 +97,8 @@ type paymentServiceGetStatemetClient struct {
 	grpc.ClientStream
 }
 
-func (x *paymentServiceGetStatemetClient) Recv() (*StatementResponse, error) {
-	m := new(StatementResponse)
+func (x *paymentServiceGetStatemetClient) Recv() (*Statement, error) {
+	m := new(Statement)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -109,10 +109,10 @@ func (x *paymentServiceGetStatemetClient) Recv() (*StatementResponse, error) {
 // All implementations must embed UnimplementedPaymentServiceServer
 // for forward compatibility
 type PaymentServiceServer interface {
-	CreatePayment(context.Context, *Payment) (*StatementResponse, error)
-	CapturePayment(context.Context, *Payment) (*StatementResponse, error)
-	CancelPayment(context.Context, *Payment) (*StatementResponse, error)
-	RefundPayment(context.Context, *Payment) (*StatementResponse, error)
+	CreatePayment(context.Context, *Payment) (*Statement, error)
+	CapturePayment(context.Context, *Payment) (*Statement, error)
+	CancelPayment(context.Context, *Payment) (*Statement, error)
+	RefundPayment(context.Context, *Payment) (*Statement, error)
 	GetStatemet(*StatementRequest, PaymentService_GetStatemetServer) error
 	mustEmbedUnimplementedPaymentServiceServer()
 }
@@ -121,16 +121,16 @@ type PaymentServiceServer interface {
 type UnimplementedPaymentServiceServer struct {
 }
 
-func (UnimplementedPaymentServiceServer) CreatePayment(context.Context, *Payment) (*StatementResponse, error) {
+func (UnimplementedPaymentServiceServer) CreatePayment(context.Context, *Payment) (*Statement, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePayment not implemented")
 }
-func (UnimplementedPaymentServiceServer) CapturePayment(context.Context, *Payment) (*StatementResponse, error) {
+func (UnimplementedPaymentServiceServer) CapturePayment(context.Context, *Payment) (*Statement, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CapturePayment not implemented")
 }
-func (UnimplementedPaymentServiceServer) CancelPayment(context.Context, *Payment) (*StatementResponse, error) {
+func (UnimplementedPaymentServiceServer) CancelPayment(context.Context, *Payment) (*Statement, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelPayment not implemented")
 }
-func (UnimplementedPaymentServiceServer) RefundPayment(context.Context, *Payment) (*StatementResponse, error) {
+func (UnimplementedPaymentServiceServer) RefundPayment(context.Context, *Payment) (*Statement, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefundPayment not implemented")
 }
 func (UnimplementedPaymentServiceServer) GetStatemet(*StatementRequest, PaymentService_GetStatemetServer) error {
@@ -230,7 +230,7 @@ func _PaymentService_GetStatemet_Handler(srv interface{}, stream grpc.ServerStre
 }
 
 type PaymentService_GetStatemetServer interface {
-	Send(*StatementResponse) error
+	Send(*Statement) error
 	grpc.ServerStream
 }
 
@@ -238,7 +238,7 @@ type paymentServiceGetStatemetServer struct {
 	grpc.ServerStream
 }
 
-func (x *paymentServiceGetStatemetServer) Send(m *StatementResponse) error {
+func (x *paymentServiceGetStatemetServer) Send(m *Statement) error {
 	return x.ServerStream.SendMsg(m)
 }
 

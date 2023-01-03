@@ -14,19 +14,19 @@ func NewPaymentService() *PaymentService {
 	return &PaymentService{}
 }
 
-func (s *PaymentService) CreatePayment(ctx context.Context, req *paymentpb.Payment) (*paymentpb.StatementResponse, error) {
+func (s *PaymentService) CreatePayment(ctx context.Context, req *paymentpb.Payment) (*paymentpb.Statement, error) {
 	return nil, nil
 }
 
-func (s *PaymentService) CapturePayment(ctx context.Context, req *paymentpb.Payment) (*paymentpb.StatementResponse, error) {
+func (s *PaymentService) CapturePayment(ctx context.Context, req *paymentpb.Payment) (*paymentpb.Statement, error) {
 	return nil, nil
 }
 
-func (s *PaymentService) CancelPayment(ctx context.Context, req *paymentpb.Payment) (*paymentpb.StatementResponse, error) {
+func (s *PaymentService) CancelPayment(ctx context.Context, req *paymentpb.Payment) (*paymentpb.Statement, error) {
 	return nil, nil
 }
 
-func (s *PaymentService) RefundPayment(ctx context.Context, req *paymentpb.Payment) (*paymentpb.StatementResponse, error) {
+func (s *PaymentService) RefundPayment(ctx context.Context, req *paymentpb.Payment) (*paymentpb.Statement, error) {
 	return nil, nil
 }
 

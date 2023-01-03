@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"log"
 
 	authpb "github.com/Edbeer/auth-grpc/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type AuthService struct {
@@ -15,7 +17,20 @@ func NewAuthService() *AuthService {
 }
 
 func (s *AuthService) CreateAccount(ctx context.Context, req *authpb.Account) (*authpb.Account, error) {
-	return nil, nil
+	log.Println("Geeee")
+	return &authpb.Account{
+		Id:               "",
+		FirstName:        req.FirstName,
+		LastName:         "",
+		CardNumber:       "",
+		CardExpiryMonth:  "",
+		CardExpiryYear:   "",
+		CardSecurityCode: "",
+		Balance:          0,
+		BlockedMoney:     0,
+		Statement:        []*authpb.Statement{},
+		CreatedAt:        timestamppb.Now(),
+	}, nil
 }
 
 func (s *AuthService) GetAccount(req *authpb.GetAccountRequest, stream authpb.AuthService_GetAccountServer) error {
@@ -30,8 +45,8 @@ func (s *AuthService) DeleteAccount(ctx context.Context, req *authpb.Account) (*
 	return nil, nil
 }
 
-func (s *AuthService) GetAccountByID(ctx context.Context, req *authpb.Account) (*authpb.Account, error) {
-	return nil, nil
+func (s *AuthService) GetAccountByID(stream authpb.AuthService_GetAccountByIDServer) error {
+	return nil
 }
 
 func (s *AuthService) DepositAccount(ctx context.Context, req *authpb.Account) (*authpb.Account, error) {

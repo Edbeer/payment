@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	server := grpc.NewServer()
+	server := grpc.NewServer(grpc.MaxConcurrentStreams(1000))
 	srv := service.NewAuthService()
 
 	authpb.RegisterAuthServiceServer(server, srv)

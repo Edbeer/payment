@@ -5,14 +5,14 @@ package auth;
 option go_package = "github.com/Edbeer/auth-grpc/proto;authpb";
 
 import "google/protobuf/timestamp.proto";
-import "payment.proto";
 
 service AuthService {
     rpc CreateAccount(Account) returns (Account) {};
     rpc GetAccount(GetAccountRequest) returns (stream Account) {};
     rpc UpdateAccount(Account) returns (Account) {};
     rpc DeleteAccount(Account) returns (DeleteResponse) {};
-    rpc GetAccountByID(Account) returns (Account) {};
+    // for payment
+    rpc GetAccountByID(stream Account) returns (stream Account) {};
     rpc DepositAccount(Account) returns (Account) {};
 }
 
@@ -32,6 +32,11 @@ message Account {
     string card_security_code = 7;
     uint64 balance = 8;
     uint64 blocked_money = 9;
-    repeated payment.StatementResponse statement = 10;
+    repeated Statement statement = 10;
     google.protobuf.Timestamp created_at = 11;
+}
+
+message Statement {
+    string payment_id = 1;
+    string status = 2;
 }
