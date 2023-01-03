@@ -8,12 +8,17 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+type Storage interface {}
+
 type AuthService struct {
+	storage Storage
 	authpb.UnimplementedAuthServiceServer
 }
 
-func NewAuthService() *AuthService {
-	return &AuthService{}
+func NewAuthService(storage Storage) *AuthService {
+	return &AuthService{
+		storage: storage,
+	}
 }
 
 func (s *AuthService) CreateAccount(ctx context.Context, req *authpb.Account) (*authpb.Account, error) {

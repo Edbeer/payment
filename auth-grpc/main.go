@@ -4,15 +4,23 @@ import (
 	"log"
 	"net"
 
+	"github.com/Edbeer/auth-grpc/pkg/db"
 	authpb "github.com/Edbeer/auth-grpc/proto"
 	"github.com/Edbeer/auth-grpc/service"
+	"github.com/Edbeer/auth-grpc/storage"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 func main() {
+	db, err := db.NewPostgresDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	storage := storage.NewStorage(db)
+	srv := service.NewAuthService(storage)
+	
 	server := grpc.NewServer(grpc.MaxConcurrentStreams(1000))
-	srv := service.NewAuthService()
 
 	authpb.RegisterAuthServiceServer(server, srv)
 
