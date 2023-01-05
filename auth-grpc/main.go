@@ -17,7 +17,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	storage := storage.NewStorage(db)
+	storage := storage.NewPostgresStorage(db)
 	srv := service.NewAuthService(storage)
 	
 	server := grpc.NewServer(grpc.MaxConcurrentStreams(1000))
