@@ -1,10 +1,11 @@
 package main
 
 import (
-
 	"log"
 	"net"
 
+	"github.com/Edbeer/payment-grpc/storage"
+	"github.com/Edbeer/payment-grpc/pkg/db"
 	paymentpb "github.com/Edbeer/payment-grpc/proto"
 	"github.com/Edbeer/payment-grpc/service"
 	"google.golang.org/grpc"
@@ -12,8 +13,15 @@ import (
 )
 
 func main() {
+	db, err := db.NewPostgresDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	storage := storage.NewPostgresStorage(db)
+
+	srv := service.NewPaymentService(storage)
 	server := grpc.NewServer(grpc.MaxConcurrentStreams(1000))
-	srv := service.NewPaymentService()
 	
 	paymentpb.RegisterPaymentServiceServer(server, srv)
 

@@ -2,16 +2,23 @@ package service
 
 import (
 	"context"
+	"database/sql"
 
 	paymentpb "github.com/Edbeer/payment-grpc/proto"
+	"github.com/Edbeer/payment-grpc/types"
 )
+
+type Storage interface {
+	SavePayment(ctx context.Context, tx *sql.Tx, payment *types.Payment) (*types.Payment, error)
+}
 
 type PaymentService struct {
 	paymentpb.UnimplementedPaymentServiceServer
+	storage Storage
 }
 
-func NewPaymentService() *PaymentService {
-	return &PaymentService{}
+func NewPaymentService(storage Storage) *PaymentService {
+	return &PaymentService{storage: storage}
 }
 
 func (s *PaymentService) CreatePayment(ctx context.Context, req *paymentpb.Payment) (*paymentpb.Statement, error) {
