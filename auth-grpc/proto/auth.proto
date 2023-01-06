@@ -5,22 +5,59 @@ package auth;
 option go_package = "github.com/Edbeer/auth-grpc/proto;authpb";
 
 import "google/protobuf/timestamp.proto";
-import "payment.proto";
 
 service AuthService {
-    rpc CreateAccount(Account) returns (Account) {};
-    rpc GetAccount(GetAccountRequest) returns (stream Account) {};
-    rpc UpdateAccount(Account) returns (Account) {};
-    rpc DeleteAccount(Account) returns (DeleteResponse) {};
-    rpc GetAccountByID(Account) returns (Account) {};
-    rpc DepositAccount(Account) returns (Account) {};
+    rpc CreateAccount(CreateRequest) returns (Account) {};
+    rpc GetAccount(GetRequest) returns (stream Account) {};
+    rpc UpdateAccount(UpdateRequest) returns (Account) {};
+    rpc DeleteAccount(DeleteRequest) returns (DeleteResponse) {};
+    // for payment
+    rpc GetAccountByID(stream GetIDRequest) returns (stream Account) {};
+    rpc DepositAccount(DepositRequest) returns (DepositResponse) {};
 }
 
-message GetAccountByIDRequest{}
+message GetIDRequest{
+    string id = 1;
+}
 
-message GetAccountRequest {}
+message GetRequest {}
 
-message DeleteResponse {}
+message DepositRequest {
+    string card_number = 1;
+    uint64 balance = 2;
+}
+
+message DepositResponse {
+    string status = 1;
+} 
+
+message DeleteRequest {
+    // Account id
+    string id = 1;
+}
+
+message DeleteResponse {
+    string status = 1;
+}
+
+message UpdateRequest {
+    string first_name = 1;
+    string last_name = 2;
+    string card_number = 3;
+    string card_expiry_month = 4;
+    string card_expiry_year = 5;
+    string card_security_code = 6;
+    string id = 7;
+}
+
+message CreateRequest {
+    string first_name = 1;
+    string last_name = 2;
+    string card_number = 3;
+    string card_expiry_month = 4;
+    string card_expiry_year = 5;
+    string card_security_code = 6;
+}
 
 message Account {
     string id = 1;
@@ -32,6 +69,10 @@ message Account {
     string card_security_code = 7;
     uint64 balance = 8;
     uint64 blocked_money = 9;
-    repeated payment.StatementResponse statement = 10;
-    google.protobuf.Timestamp created_at = 11;
+    google.protobuf.Timestamp created_at = 10;
+}
+
+message Statement {
+    string payment_id = 1;
+    string status = 2;
 }

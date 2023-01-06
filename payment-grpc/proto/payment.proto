@@ -7,17 +7,18 @@ option go_package = "github.com/Edbeer/payment-grpc/proto;paymentpb";
 import "google/protobuf/timestamp.proto";
 
 service PaymentService {
-    rpc CreatePayment(Payment) returns (StatementResponse) {}
-    rpc CapturePayment(Payment) returns (StatementResponse) {}
-    rpc CancelPayment(Payment) returns (StatementResponse) {}
-    rpc RefundPayment(Payment) returns (StatementResponse) {}
-    rpc GetStatemet(StatementRequest) returns (stream StatementResponse) {}
+    rpc CreatePayment(Payment) returns (Statement) {}
+    rpc CapturePayment(Payment) returns (Statement) {}
+    rpc CancelPayment(Payment) returns (Statement) {}
+    rpc RefundPayment(Payment) returns (Statement) {}
+    // for auth
+    rpc GetStatemet(StatementRequest) returns (stream Statement) {}
 }
 
 message Payment {
     string payment_id = 1;
-    string payment_receiver = 2;
-    string payer = 3;
+    string merchant = 2;
+    string customer = 3;
     Currencies currency = 4;
     Operations operation = 5;
     Statuses status = 6;
@@ -25,25 +26,11 @@ message Payment {
     google.protobuf.Timestamp created_at = 8;
 }
 
-message Account {
-    string id = 1;
-    string first_name = 2;
-    string last_name = 3;
-    string card_number = 4;
-    string card_expiry_month = 5;
-    string card_expiry_year = 6;
-    string card_security_code = 7;
-    uint64 balance = 8;
-    uint64 blocked_money = 9;
-    repeated StatementResponse statement = 10;
-    google.protobuf.Timestamp created_at = 11;
-}
-
 message StatementRequest {
     string account_id = 1;
 }
 
-message StatementResponse {
+message Statement {
     string payment_id = 1;
     string status = 2;
 }
