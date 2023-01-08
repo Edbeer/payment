@@ -11,10 +11,28 @@ service AuthService {
     rpc GetAccount(GetRequest) returns (stream Account) {};
     rpc UpdateAccount(UpdateRequest) returns (Account) {};
     rpc DeleteAccount(DeleteRequest) returns (DeleteResponse) {};
-    // for payment
-    rpc GetAccountByID(stream GetIDRequest) returns (stream Account) {};
     rpc DepositAccount(DepositRequest) returns (DepositResponse) {};
+    // for payment
+    rpc GetAccountByID(GetIDRequest) returns (Account) {};
+    rpc GetStatemet(StatementRequest) returns (stream Statement) {};
+    rpc CreateStatement(stream StatementRequest) returns (stream StatementResponse) {};
+    rpc UpdateBalance(UpdateBalanceRequest) returns (Account) {};
 }
+
+message UpdateBalanceRequest {
+    // account id
+    string id = 1;
+    uint64 balance = 2;
+    uint64 blocked_money = 3;
+}
+
+message StatementRequest {
+    // account id
+    string account_id = 1;
+    string payment_id = 2;
+}
+
+message StatementResponse {}
 
 message GetIDRequest{
     string id = 1;
@@ -69,10 +87,13 @@ message Account {
     string card_security_code = 7;
     uint64 balance = 8;
     uint64 blocked_money = 9;
-    google.protobuf.Timestamp created_at = 10;
+    repeated string statement  = 10;
+    google.protobuf.Timestamp created_at = 11;
 }
 
 message Statement {
-    string payment_id = 1;
-    string status = 2;
+    string account_id = 1;
+    string payment_id = 2;
+    string operation = 3;
+    string status = 4;
 }

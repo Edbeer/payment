@@ -14,12 +14,6 @@ CREATE TABLE IF NOT EXISTS account
 	card_security_code VARCHAR(3),
 	balance serial,
 	blocked_money serial,
+	statement text[],
 	created_at TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS statement
-(
-    account_id UUID references account,
-    payment_id varchar,
-    status varchar
 );

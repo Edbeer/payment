@@ -7,18 +7,9 @@ import (
 
 	authpb "github.com/Edbeer/auth-grpc/proto"
 	"github.com/Edbeer/auth-grpc/types"
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
-
-
-type Storage interface {
-	CreateAccount(ctx context.Context, account *authpb.CreateRequest) (*types.Account, error)
-	UpdateAccount(ctx context.Context, account *authpb.UpdateRequest) (*types.Account, error)
-	DeleteAccount(ctx context.Context, req *authpb.DeleteRequest) (*authpb.DeleteResponse, error)
-	DepositAccount(ctx context.Context, req *authpb.DepositRequest) (*authpb.DepositResponse, error)
-	GetAccountByID(ctx context.Context, req *authpb.GetIDRequest) (*types.Account, error)
-	GetAccount(ctx context.Context) ([]*types.Account, error)
-}
 
 type PostgresStorage struct {
 	db *sql.DB
@@ -35,8 +26,8 @@ func (s *PostgresStorage) CreateAccount(ctx context.Context, account *authpb.Cre
 	query := `INSERT INTO account (first_name, 
 		last_name, card_number, card_expiry_month, 
 		card_expiry_year, card_security_code, 
-		balance, blocked_money, created_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
+		balance, blocked_money, statement, created_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())
 			RETURNING *`
 	reqAcc := types.NewAccount(account)
 	acc := &types.Account{}
@@ -50,12 +41,14 @@ func (s *PostgresStorage) CreateAccount(ctx context.Context, account *authpb.Cre
 		reqAcc.CardSecurityCode,
 		reqAcc.Balance,
 		reqAcc.BlockedMoney,
+		pq.Array(reqAcc.Statement),
 	).Scan(
 		&acc.ID, &acc.FirstName,
 		&acc.LastName, &acc.CardNumber,
 		&acc.CardExpiryMonth, &acc.CardExpiryYear,
 		&acc.CardSecurityCode, &acc.Balance,
-		&acc.BlockedMoney, &acc.CreatedAt,
+		&acc.BlockedMoney, pq.Array(&acc.Statement), 
+		&acc.CreatedAt,
 	); err != nil {
 		return nil, err
 	}
@@ -89,7 +82,8 @@ func (s *PostgresStorage) UpdateAccount(ctx context.Context, account *authpb.Upd
 		&acc.LastName, &acc.CardNumber,
 		&acc.CardExpiryMonth, &acc.CardExpiryYear,
 		&acc.CardSecurityCode, &acc.Balance,
-		&acc.BlockedMoney, &acc.CreatedAt,
+		&acc.BlockedMoney, pq.Array(&acc.Statement), 
+		&acc.CreatedAt,
 	); err != nil {
 		return nil, err
 	}
@@ -126,7 +120,8 @@ func (s *PostgresStorage) DepositAccount(ctx context.Context, req *authpb.Deposi
 		&acc.LastName, &acc.CardNumber,
 		&acc.CardExpiryMonth, &acc.CardExpiryYear,
 		&acc.CardSecurityCode, &acc.Balance,
-		&acc.BlockedMoney, &acc.CreatedAt,
+		&acc.BlockedMoney, pq.Array(&acc.Statement), 
+		&acc.CreatedAt,
 	); err != nil {
 		return nil, err
 	}
@@ -151,7 +146,8 @@ func (s *PostgresStorage) GetAccount(ctx context.Context) ([]*types.Account, err
 			&acc.LastName, &acc.CardNumber,
 			&acc.CardExpiryMonth, &acc.CardExpiryYear,
 			&acc.CardSecurityCode, &acc.Balance,
-			&acc.BlockedMoney, &acc.CreatedAt,
+			&acc.BlockedMoney, pq.Array(&acc.Statement), 
+			&acc.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -172,9 +168,75 @@ func (s *PostgresStorage) GetAccountByID(ctx context.Context, req *authpb.GetIDR
 		&acc.LastName, &acc.CardNumber,
 		&acc.CardExpiryMonth, &acc.CardExpiryYear,
 		&acc.CardSecurityCode, &acc.Balance,
-		&acc.BlockedMoney, &acc.CreatedAt,
+		&acc.BlockedMoney, pq.Array(&acc.Statement), 
+		&acc.CreatedAt,
 	); err != nil {
 		return nil, err
 	}
 	return acc, nil
+}
+
+func (s *PostgresStorage) SaveBalance(ctx context.Context, req *authpb.UpdateBalanceRequest) (*types.Account, error) {
+	query := `UPDATE account
+				SET balance = COALESCE($1, balance),
+					blocked_money = COALESCE($2, blocked_money)
+				WHERE id = $3
+				RETURNING *`
+	tx, err := s.db.BeginTx(ctx, nil)
+	defer tx.Rollback()
+	if err != nil {
+		return nil, err
+	}
+	acc := &types.Account{}
+	if err := tx.QueryRowContext(
+		ctx, query,
+		req.Balance,
+		req.BlockedMoney,
+		req.Id,
+	).Scan(
+		&acc.ID, &acc.FirstName,
+		&acc.LastName, &acc.CardNumber,
+		&acc.CardExpiryMonth, &acc.CardExpiryYear,
+		&acc.CardSecurityCode, &acc.Balance,
+		&acc.BlockedMoney, pq.Array(&acc.Statement), 
+		&acc.CreatedAt,
+	); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return  nil, err
+	}
+	return acc, nil
+}
+
+func (s *PostgresStorage) UpdateStatement(ctx context.Context, req *authpb.StatementRequest) ([]string, error) {
+	query := `UPDATE account
+				SET statement = array_append(statement, $1)
+				WHERE id = $2
+				RETURNING *`
+	acc := &types.Account{}
+	tx, err := s.db.BeginTx(ctx, nil)
+	defer tx.Rollback()
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.QueryRowContext(
+		ctx,
+		query,
+		req.PaymentId,
+		req.AccountId,
+	).Scan(
+		&acc.ID, &acc.FirstName,
+		&acc.LastName, &acc.CardNumber,
+		&acc.CardExpiryMonth, &acc.CardExpiryYear,
+		&acc.CardSecurityCode, &acc.Balance,
+		&acc.BlockedMoney, pq.Array(&acc.Statement),
+		&acc.CreatedAt,
+	); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return acc.Statement, nil
 }

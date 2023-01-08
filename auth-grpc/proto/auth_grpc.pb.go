@@ -26,9 +26,12 @@ type AuthServiceClient interface {
 	GetAccount(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (AuthService_GetAccountClient, error)
 	UpdateAccount(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*Account, error)
 	DeleteAccount(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
-	// for payment
-	GetAccountByID(ctx context.Context, opts ...grpc.CallOption) (AuthService_GetAccountByIDClient, error)
 	DepositAccount(ctx context.Context, in *DepositRequest, opts ...grpc.CallOption) (*DepositResponse, error)
+	// for payment
+	GetAccountByID(ctx context.Context, in *GetIDRequest, opts ...grpc.CallOption) (*Account, error)
+	GetStatemet(ctx context.Context, in *StatementRequest, opts ...grpc.CallOption) (AuthService_GetStatemetClient, error)
+	CreateStatement(ctx context.Context, opts ...grpc.CallOption) (AuthService_CreateStatementClient, error)
+	UpdateBalance(ctx context.Context, in *UpdateBalanceRequest, opts ...grpc.CallOption) (*Account, error)
 }
 
 type authServiceClient struct {
@@ -98,40 +101,90 @@ func (c *authServiceClient) DeleteAccount(ctx context.Context, in *DeleteRequest
 	return out, nil
 }
 
-func (c *authServiceClient) GetAccountByID(ctx context.Context, opts ...grpc.CallOption) (AuthService_GetAccountByIDClient, error) {
-	stream, err := c.cc.NewStream(ctx, &AuthService_ServiceDesc.Streams[1], "/auth.AuthService/GetAccountByID", opts...)
+func (c *authServiceClient) DepositAccount(ctx context.Context, in *DepositRequest, opts ...grpc.CallOption) (*DepositResponse, error) {
+	out := new(DepositResponse)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/DepositAccount", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &authServiceGetAccountByIDClient{stream}
+	return out, nil
+}
+
+func (c *authServiceClient) GetAccountByID(ctx context.Context, in *GetIDRequest, opts ...grpc.CallOption) (*Account, error) {
+	out := new(Account)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/GetAccountByID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) GetStatemet(ctx context.Context, in *StatementRequest, opts ...grpc.CallOption) (AuthService_GetStatemetClient, error) {
+	stream, err := c.cc.NewStream(ctx, &AuthService_ServiceDesc.Streams[1], "/auth.AuthService/GetStatemet", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &authServiceGetStatemetClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
 	return x, nil
 }
 
-type AuthService_GetAccountByIDClient interface {
-	Send(*GetIDRequest) error
-	Recv() (*Account, error)
+type AuthService_GetStatemetClient interface {
+	Recv() (*Statement, error)
 	grpc.ClientStream
 }
 
-type authServiceGetAccountByIDClient struct {
+type authServiceGetStatemetClient struct {
 	grpc.ClientStream
 }
 
-func (x *authServiceGetAccountByIDClient) Send(m *GetIDRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *authServiceGetAccountByIDClient) Recv() (*Account, error) {
-	m := new(Account)
+func (x *authServiceGetStatemetClient) Recv() (*Statement, error) {
+	m := new(Statement)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *authServiceClient) DepositAccount(ctx context.Context, in *DepositRequest, opts ...grpc.CallOption) (*DepositResponse, error) {
-	out := new(DepositResponse)
-	err := c.cc.Invoke(ctx, "/auth.AuthService/DepositAccount", in, out, opts...)
+func (c *authServiceClient) CreateStatement(ctx context.Context, opts ...grpc.CallOption) (AuthService_CreateStatementClient, error) {
+	stream, err := c.cc.NewStream(ctx, &AuthService_ServiceDesc.Streams[2], "/auth.AuthService/CreateStatement", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &authServiceCreateStatementClient{stream}
+	return x, nil
+}
+
+type AuthService_CreateStatementClient interface {
+	Send(*StatementRequest) error
+	Recv() (*StatementResponse, error)
+	grpc.ClientStream
+}
+
+type authServiceCreateStatementClient struct {
+	grpc.ClientStream
+}
+
+func (x *authServiceCreateStatementClient) Send(m *StatementRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *authServiceCreateStatementClient) Recv() (*StatementResponse, error) {
+	m := new(StatementResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *authServiceClient) UpdateBalance(ctx context.Context, in *UpdateBalanceRequest, opts ...grpc.CallOption) (*Account, error) {
+	out := new(Account)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/UpdateBalance", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -146,9 +199,12 @@ type AuthServiceServer interface {
 	GetAccount(*GetRequest, AuthService_GetAccountServer) error
 	UpdateAccount(context.Context, *UpdateRequest) (*Account, error)
 	DeleteAccount(context.Context, *DeleteRequest) (*DeleteResponse, error)
-	// for payment
-	GetAccountByID(AuthService_GetAccountByIDServer) error
 	DepositAccount(context.Context, *DepositRequest) (*DepositResponse, error)
+	// for payment
+	GetAccountByID(context.Context, *GetIDRequest) (*Account, error)
+	GetStatemet(*StatementRequest, AuthService_GetStatemetServer) error
+	CreateStatement(AuthService_CreateStatementServer) error
+	UpdateBalance(context.Context, *UpdateBalanceRequest) (*Account, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -168,11 +224,20 @@ func (UnimplementedAuthServiceServer) UpdateAccount(context.Context, *UpdateRequ
 func (UnimplementedAuthServiceServer) DeleteAccount(context.Context, *DeleteRequest) (*DeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteAccount not implemented")
 }
-func (UnimplementedAuthServiceServer) GetAccountByID(AuthService_GetAccountByIDServer) error {
-	return status.Errorf(codes.Unimplemented, "method GetAccountByID not implemented")
-}
 func (UnimplementedAuthServiceServer) DepositAccount(context.Context, *DepositRequest) (*DepositResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DepositAccount not implemented")
+}
+func (UnimplementedAuthServiceServer) GetAccountByID(context.Context, *GetIDRequest) (*Account, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAccountByID not implemented")
+}
+func (UnimplementedAuthServiceServer) GetStatemet(*StatementRequest, AuthService_GetStatemetServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetStatemet not implemented")
+}
+func (UnimplementedAuthServiceServer) CreateStatement(AuthService_CreateStatementServer) error {
+	return status.Errorf(codes.Unimplemented, "method CreateStatement not implemented")
+}
+func (UnimplementedAuthServiceServer) UpdateBalance(context.Context, *UpdateBalanceRequest) (*Account, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateBalance not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 
@@ -262,32 +327,6 @@ func _AuthService_DeleteAccount_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_GetAccountByID_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(AuthServiceServer).GetAccountByID(&authServiceGetAccountByIDServer{stream})
-}
-
-type AuthService_GetAccountByIDServer interface {
-	Send(*Account) error
-	Recv() (*GetIDRequest, error)
-	grpc.ServerStream
-}
-
-type authServiceGetAccountByIDServer struct {
-	grpc.ServerStream
-}
-
-func (x *authServiceGetAccountByIDServer) Send(m *Account) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *authServiceGetAccountByIDServer) Recv() (*GetIDRequest, error) {
-	m := new(GetIDRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func _AuthService_DepositAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DepositRequest)
 	if err := dec(in); err != nil {
@@ -302,6 +341,89 @@ func _AuthService_DepositAccount_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthServiceServer).DepositAccount(ctx, req.(*DepositRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_GetAccountByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetAccountByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/GetAccountByID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetAccountByID(ctx, req.(*GetIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_GetStatemet_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(StatementRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(AuthServiceServer).GetStatemet(m, &authServiceGetStatemetServer{stream})
+}
+
+type AuthService_GetStatemetServer interface {
+	Send(*Statement) error
+	grpc.ServerStream
+}
+
+type authServiceGetStatemetServer struct {
+	grpc.ServerStream
+}
+
+func (x *authServiceGetStatemetServer) Send(m *Statement) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _AuthService_CreateStatement_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(AuthServiceServer).CreateStatement(&authServiceCreateStatementServer{stream})
+}
+
+type AuthService_CreateStatementServer interface {
+	Send(*StatementResponse) error
+	Recv() (*StatementRequest, error)
+	grpc.ServerStream
+}
+
+type authServiceCreateStatementServer struct {
+	grpc.ServerStream
+}
+
+func (x *authServiceCreateStatementServer) Send(m *StatementResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *authServiceCreateStatementServer) Recv() (*StatementRequest, error) {
+	m := new(StatementRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _AuthService_UpdateBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateBalanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).UpdateBalance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/UpdateBalance",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).UpdateBalance(ctx, req.(*UpdateBalanceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -329,6 +451,14 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "DepositAccount",
 			Handler:    _AuthService_DepositAccount_Handler,
 		},
+		{
+			MethodName: "GetAccountByID",
+			Handler:    _AuthService_GetAccountByID_Handler,
+		},
+		{
+			MethodName: "UpdateBalance",
+			Handler:    _AuthService_UpdateBalance_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
@@ -337,8 +467,13 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "GetAccountByID",
-			Handler:       _AuthService_GetAccountByID_Handler,
+			StreamName:    "GetStatemet",
+			Handler:       _AuthService_GetStatemet_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "CreateStatement",
+			Handler:       _AuthService_CreateStatement_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

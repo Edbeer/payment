@@ -7,23 +7,37 @@ option go_package = "github.com/Edbeer/payment-grpc/proto;paymentpb";
 import "google/protobuf/timestamp.proto";
 
 service PaymentService {
-    rpc CreatePayment(Payment) returns (Statement) {}
-    rpc CapturePayment(Payment) returns (Statement) {}
-    rpc CancelPayment(Payment) returns (Statement) {}
-    rpc RefundPayment(Payment) returns (Statement) {}
-    // for auth
-    rpc GetStatemet(StatementRequest) returns (stream Statement) {}
+    rpc CreatePayment(CreateRequest) returns (Statement) {};
+    rpc CapturePayment(Payment) returns (Statement) {};
+    rpc CancelPayment(Payment) returns (Statement) {};
+    rpc RefundPayment(Payment) returns (Statement) {};
+}
+
+message CreateRequest {
+    string merchant = 1;
+    string customer = 2;
+    string card_number = 3;
+    string card_expiry_month = 4;
+    string card_expiry_year = 5;
+    string card_security_code = 6;
+    string currency = 7;
+    string operation = 8;
+    uint64 amount = 9;
 }
 
 message Payment {
     string payment_id = 1;
     string merchant = 2;
     string customer = 3;
-    Currencies currency = 4;
-    Operations operation = 5;
-    Statuses status = 6;
-    double amount = 7;
-    google.protobuf.Timestamp created_at = 8;
+    string card_number = 4;
+    string card_expiry_month = 5;
+    string card_expiry_year = 6;
+    string card_security_code = 7;
+    string currency = 8;
+    string operation = 9;
+    string status = 10;
+    uint64 amount = 11;
+    google.protobuf.Timestamp created_at = 12;
 }
 
 message StatementRequest {
@@ -32,27 +46,6 @@ message StatementRequest {
 
 message Statement {
     string payment_id = 1;
-    string status = 2;
-}
-
-enum Currencies {
-    RUB = 0;
-    USD = 1;
-    EUR = 2;
-}
-
-enum Operations {
-    AUTHORIZATION = 0;
-    CAPTURE = 1;
-    CANCEL = 2;
-    REFUND = 3;
-}
-
-enum Statuses {
-    APPROVED = 0;
-    SUCCESSFUL_PAYMENT = 1;
-    INSUFFICIENT_FUNDS = 2;
-    INVALID_AMOUNT = 3;
-    SUCCESSFUL_CANCEL = 4;
-    SUCCESSFUL_REFUND = 5;
+    string account_id = 2;
+    string status = 3;
 }

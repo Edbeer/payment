@@ -1,3 +1,4 @@
+//go:generate mockgen -source service.go -destination mock/storage_mock.go -package mock
 package service
 
 import (
@@ -18,11 +19,13 @@ type Storage interface {
 	DepositAccount(ctx context.Context, req *authpb.DepositRequest) (*authpb.DepositResponse, error)
 	GetAccountByID(ctx context.Context, req *authpb.GetIDRequest) (*types.Account, error)
 	GetAccount(ctx context.Context) ([]*types.Account, error)
+	SaveBalance(ctx context.Context, req *authpb.UpdateBalanceRequest) (*types.Account, error)
+	UpdateStatement(ctx context.Context, req *authpb.StatementRequest) ([]string, error)
 }
 
 type AuthService struct {
-	storage Storage
 	authpb.UnimplementedAuthServiceServer
+	storage Storage
 }
 
 func NewAuthService(storage Storage) *AuthService {
@@ -87,36 +90,12 @@ func (s *AuthService) DeleteAccount(ctx context.Context, req *authpb.DeleteReque
 	return status, nil
 }
 
-func (s *AuthService) GetAccountByID(stream authpb.AuthService_GetAccountByIDServer) error {
-	accounts := []*types.Account{}
-	for {
-		req, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-		account, err := s.storage.GetAccountByID(stream.Context(), req)
-		if err != nil {
-			return err
-		}
-		accounts = append(accounts, account)
+func (s *AuthService) GetAccountByID(ctx context.Context, req *authpb.GetIDRequest) (*authpb.Account, error) {
+	account, err := s.storage.GetAccountByID(ctx, req)
+	if err != nil {
+		return nil, err
 	}
-	for {
-		select {
-		case <-stream.Context().Done():
-			return status.Error(codes.Canceled, "Stream has ended")
-		default:
-			for _, account := range accounts {
-				if err := stream.SendMsg(accountToProto(account)); err != nil {
-					return status.Error(codes.Canceled, "Stream has ended")
-				}
-			}
-		}
-		break
-	}
-	return nil
+	return accountToProto(account), nil
 }
 
 func (s *AuthService) DepositAccount(ctx context.Context, req *authpb.DepositRequest) (*authpb.DepositResponse, error) {
@@ -127,6 +106,42 @@ func (s *AuthService) DepositAccount(ctx context.Context, req *authpb.DepositReq
 	return status, nil
 }
 
+func (s *AuthService) UpdateBalance(ctx context.Context, req *authpb.UpdateBalanceRequest) (*authpb.Account, error) {
+	account, err := s.storage.SaveBalance(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return accountToProto(account), nil
+}
+
+func (s *AuthService) CreateStatement(stream authpb.AuthService_CreateStatementServer) error {
+	for {
+		statement, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		_, err = s.storage.UpdateStatement(stream.Context(), statement)
+		if err != nil {
+			return err
+		}
+		if err = stream.Send(&authpb.StatementResponse{}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// func (s *AuthService) CreateStatement(ctx context.Context, req *authpb.StatementRequest) (*authpb.StatementResponse, error) {
+// 	_, err := s.storage.UpdateStatement(ctx, req)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return &authpb.StatementResponse{}, nil
+// }
+
 func accountToProto(acc *types.Account) *authpb.Account {
 	return &authpb.Account{
 		Id:               acc.ID.String(),
@@ -136,6 +151,8 @@ func accountToProto(acc *types.Account) *authpb.Account {
 		CardExpiryMonth:  acc.CardExpiryMonth,
 		CardExpiryYear:   acc.CardExpiryYear,
 		CardSecurityCode: acc.CardSecurityCode,
+		Balance:          acc.Balance,
+		BlockedMoney:     acc.BlockedMoney,
 		CreatedAt:        timestamppb.New(acc.CreatedAt),
 	}
 }

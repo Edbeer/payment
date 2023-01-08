@@ -22,11 +22,10 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PaymentServiceClient interface {
-	CreatePayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*Statement, error)
+	CreatePayment(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*Statement, error)
 	CapturePayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*Statement, error)
 	CancelPayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*Statement, error)
 	RefundPayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*Statement, error)
-	GetStatemet(ctx context.Context, in *StatementRequest, opts ...grpc.CallOption) (PaymentService_GetStatemetClient, error)
 }
 
 type paymentServiceClient struct {
@@ -37,7 +36,7 @@ func NewPaymentServiceClient(cc grpc.ClientConnInterface) PaymentServiceClient {
 	return &paymentServiceClient{cc}
 }
 
-func (c *paymentServiceClient) CreatePayment(ctx context.Context, in *Payment, opts ...grpc.CallOption) (*Statement, error) {
+func (c *paymentServiceClient) CreatePayment(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*Statement, error) {
 	out := new(Statement)
 	err := c.cc.Invoke(ctx, "/payment.PaymentService/CreatePayment", in, out, opts...)
 	if err != nil {
@@ -73,47 +72,14 @@ func (c *paymentServiceClient) RefundPayment(ctx context.Context, in *Payment, o
 	return out, nil
 }
 
-func (c *paymentServiceClient) GetStatemet(ctx context.Context, in *StatementRequest, opts ...grpc.CallOption) (PaymentService_GetStatemetClient, error) {
-	stream, err := c.cc.NewStream(ctx, &PaymentService_ServiceDesc.Streams[0], "/payment.PaymentService/GetStatemet", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &paymentServiceGetStatemetClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type PaymentService_GetStatemetClient interface {
-	Recv() (*Statement, error)
-	grpc.ClientStream
-}
-
-type paymentServiceGetStatemetClient struct {
-	grpc.ClientStream
-}
-
-func (x *paymentServiceGetStatemetClient) Recv() (*Statement, error) {
-	m := new(Statement)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 // PaymentServiceServer is the server API for PaymentService service.
 // All implementations must embed UnimplementedPaymentServiceServer
 // for forward compatibility
 type PaymentServiceServer interface {
-	CreatePayment(context.Context, *Payment) (*Statement, error)
+	CreatePayment(context.Context, *CreateRequest) (*Statement, error)
 	CapturePayment(context.Context, *Payment) (*Statement, error)
 	CancelPayment(context.Context, *Payment) (*Statement, error)
 	RefundPayment(context.Context, *Payment) (*Statement, error)
-	GetStatemet(*StatementRequest, PaymentService_GetStatemetServer) error
 	mustEmbedUnimplementedPaymentServiceServer()
 }
 
@@ -121,7 +87,7 @@ type PaymentServiceServer interface {
 type UnimplementedPaymentServiceServer struct {
 }
 
-func (UnimplementedPaymentServiceServer) CreatePayment(context.Context, *Payment) (*Statement, error) {
+func (UnimplementedPaymentServiceServer) CreatePayment(context.Context, *CreateRequest) (*Statement, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePayment not implemented")
 }
 func (UnimplementedPaymentServiceServer) CapturePayment(context.Context, *Payment) (*Statement, error) {
@@ -132,9 +98,6 @@ func (UnimplementedPaymentServiceServer) CancelPayment(context.Context, *Payment
 }
 func (UnimplementedPaymentServiceServer) RefundPayment(context.Context, *Payment) (*Statement, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefundPayment not implemented")
-}
-func (UnimplementedPaymentServiceServer) GetStatemet(*StatementRequest, PaymentService_GetStatemetServer) error {
-	return status.Errorf(codes.Unimplemented, "method GetStatemet not implemented")
 }
 func (UnimplementedPaymentServiceServer) mustEmbedUnimplementedPaymentServiceServer() {}
 
@@ -150,7 +113,7 @@ func RegisterPaymentServiceServer(s grpc.ServiceRegistrar, srv PaymentServiceSer
 }
 
 func _PaymentService_CreatePayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Payment)
+	in := new(CreateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -162,7 +125,7 @@ func _PaymentService_CreatePayment_Handler(srv interface{}, ctx context.Context,
 		FullMethod: "/payment.PaymentService/CreatePayment",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaymentServiceServer).CreatePayment(ctx, req.(*Payment))
+		return srv.(PaymentServiceServer).CreatePayment(ctx, req.(*CreateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -221,27 +184,6 @@ func _PaymentService_RefundPayment_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaymentService_GetStatemet_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(StatementRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(PaymentServiceServer).GetStatemet(m, &paymentServiceGetStatemetServer{stream})
-}
-
-type PaymentService_GetStatemetServer interface {
-	Send(*Statement) error
-	grpc.ServerStream
-}
-
-type paymentServiceGetStatemetServer struct {
-	grpc.ServerStream
-}
-
-func (x *paymentServiceGetStatemetServer) Send(m *Statement) error {
-	return x.ServerStream.SendMsg(m)
-}
-
 // PaymentService_ServiceDesc is the grpc.ServiceDesc for PaymentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,12 +208,6 @@ var PaymentService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _PaymentService_RefundPayment_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "GetStatemet",
-			Handler:       _PaymentService_GetStatemet_Handler,
-			ServerStreams: true,
-		},
-	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "payment.proto",
 }

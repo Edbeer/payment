@@ -7,7 +7,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	authpb "github.com/Edbeer/auth-grpc/proto"
-	mockstore "github.com/Edbeer/auth-grpc/storage/mock"
+	mockstore "github.com/Edbeer/auth-grpc/service/mock"
 	"github.com/Edbeer/auth-grpc/types"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -155,63 +155,4 @@ func Test_DepositAccount(t *testing.T) {
 	result, err := mockService.DepositAccount(context.Background(), reqDep)
 	require.NoError(t, err)
 	require.Equal(t, result, resp)
-}
-
-func Test_Account(t *testing.T) {
-	t.Parallel()
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	db, _, err := sqlmock.New()
-	require.NoError(t, err)
-	defer db.Close()
-
-	mockStorage := mockstore.NewMockStorage(ctrl)
-	_ = NewAuthService(mockStorage)
-
-	_ = &authpb.GetRequest{}
-
-	accounts := []*types.Account{
-		{
-			ID:               uuid.New(),
-			FirstName:        "Pasha",
-			LastName:         "volkov",
-			CardNumber:       "444444444444444",
-			CardExpiryMonth:  "12",
-			CardExpiryYear:   "24",
-			CardSecurityCode: "924",
-			Balance:          0,
-			BlockedMoney:     0,
-			CreatedAt:        time.Now(),
-		},
-		{
-			ID:               uuid.New(),
-			FirstName:        "Pasha1",
-			LastName:         "volkov1",
-			CardNumber:       "444444444444442",
-			CardExpiryMonth:  "12",
-			CardExpiryYear:   "24",
-			CardSecurityCode: "924",
-			Balance:          0,
-			BlockedMoney:     0,
-			CreatedAt:        time.Now(),
-		},
-		{
-			ID:               uuid.New(),
-			FirstName:        "Pasha12",
-			LastName:         "volkov12",
-			CardNumber:       "444444444444443",
-			CardExpiryMonth:  "12",
-			CardExpiryYear:   "24",
-			CardSecurityCode: "924",
-			Balance:          0,
-			BlockedMoney:     0,
-			CreatedAt:        time.Now(),
-		},
-	}
-
-	mockStorage.EXPECT().GetAccount(context.Background()).Return(accounts, nil).AnyTimes()
-
-
 }
