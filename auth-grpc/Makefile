@@ -27,3 +27,17 @@ migrate-down:
 
 run:
 	go run main.go
+
+mockClient:
+	mockgen github.com/Edbeer/auth-grpc/proto AuthServiceClient > client/mock/client_mock.go
+
+mockGetAccount:
+	mockgen github.com/Edbeer/auth-grpc/proto AuthService_GetAccountClient,AuthService_GetAccountServer > client/mock/get_account_mock.go
+
+mockGetStat:
+	mockgen github.com/Edbeer/auth-grpc/proto AuthService_GetStatementClient,AuthService_GetStatementServer > client/mock/get_statetement_mock.go
+
+mockCreateStat:
+	mockgen github.com/Edbeer/auth-grpc/proto AuthService_CreateStatementClient,AuthService_CreateStatementServer > client/mock/create_statetemet_mock.go
+
+mock: mockClient mockGetAccount mockCreateStat mockGetStat

@@ -4,6 +4,7 @@ import (
 	"context"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	authpb "github.com/Edbeer/auth-grpc/proto"
@@ -51,14 +52,13 @@ func Test_SavePayment(t *testing.T) {
 		}
 
 		payReq := &paymentpb.CreateRequest{
-			Merchant:         "",
-			Customer:         "",
+			Merchant:         merchant.Id,
+			Customer:         customer.Id,
 			CardNumber:       "444444444444444",
 			CardExpiryMonth:  "12",
 			CardExpiryYear:   "24",
 			CardSecurityCode: "924",
 			Currency:         "RUB",
-			Operation:        "",
 			Amount:           50,
 		}
 		
@@ -94,7 +94,7 @@ func Test_SavePayment(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO payment (merchant, 
 			customer, card_number, card_expiry_month,
-			card_expiry_year, currency, operation, 
+			card_expiry_year, currency, operation,
 			status, amount, created_at)
 				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 				RETURNING *`)).WithArgs(
@@ -111,6 +111,55 @@ func Test_SavePayment(t *testing.T) {
 
 		tx, _ := db.BeginTx(context.Background(), nil)
 		pay, err := psql.SavePayment(context.Background(), tx, payment)
+		require.NoError(t, err)
+		require.NotNil(t, pay)
+	})
+}
+
+func Test_GetPaymentByID(t *testing.T) {
+	t.Parallel()
+
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	psql := NewPostgresStorage(db)
+
+	t.Run("GetPaymentByID", func(t *testing.T) {
+		req := &paymentpb.PaidRequest{
+			PaymentId: uuid.New().String(),
+		}
+
+		colums := []string{
+			"payment_id",
+			"merchant",
+			"customer",
+			"card_number",
+			"card_expiry_month",
+			"card_expiry_year",
+			"currency",
+			"operation",
+			"status",
+			"amount",
+			"created_at",
+		}
+		rows := sqlmock.NewRows(colums).AddRow(
+			req.PaymentId,
+			"",
+			"",
+			"444444444444444",
+			"12",
+			"24",
+			"RUB",
+			"",
+			"",
+			50,
+			time.Now(),
+		)
+
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM payment WHERE payment_id = $1`)).WithArgs(req.PaymentId).WillReturnRows(rows)
+
+		pay, err := psql.GetPaymentByID(context.Background(), req)
 		require.NoError(t, err)
 		require.NotNil(t, pay)
 	})

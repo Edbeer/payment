@@ -39,9 +39,26 @@ func CreateAuthPayment(req *paymentpb.CreateRequest, customer *authpb.Account, m
 		CardExpiryMonth: req.CardExpiryMonth,
 		CardExpiryYear:  req.CardExpiryYear,
 		Currency:        req.Currency,
-		Operation:       req.Operation,
+		Operation:       "Authorization",
 		Status:          status,
 		Amount:          req.Amount,
+		CreatedAt:       time.Now(),
+	}
+}
+
+// creating a complete payment
+func CreateCompletePayment(paidReq *paymentpb.PaidRequest, referncedPayment *Payment, status string) *Payment {
+	return &Payment{
+		PaymentId:       uuid.New(),
+		Merchant:        referncedPayment.Merchant,
+		Customer:        referncedPayment.Customer,
+		CardNumber:      referncedPayment.CardNumber,
+		CardExpiryMonth: referncedPayment.CardExpiryMonth,
+		CardExpiryYear:  referncedPayment.CardExpiryYear,
+		Currency:        referncedPayment.Currency,
+		Operation:       referncedPayment.Operation,
+		Status:          status,
+		Amount:          paidReq.Amount,
 		CreatedAt:       time.Now(),
 	}
 }

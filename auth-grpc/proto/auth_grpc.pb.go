@@ -29,7 +29,7 @@ type AuthServiceClient interface {
 	DepositAccount(ctx context.Context, in *DepositRequest, opts ...grpc.CallOption) (*DepositResponse, error)
 	// for payment
 	GetAccountByID(ctx context.Context, in *GetIDRequest, opts ...grpc.CallOption) (*Account, error)
-	GetStatemet(ctx context.Context, in *StatementRequest, opts ...grpc.CallOption) (AuthService_GetStatemetClient, error)
+	GetStatement(ctx context.Context, in *StatementGet, opts ...grpc.CallOption) (AuthService_GetStatementClient, error)
 	CreateStatement(ctx context.Context, opts ...grpc.CallOption) (AuthService_CreateStatementClient, error)
 	UpdateBalance(ctx context.Context, in *UpdateBalanceRequest, opts ...grpc.CallOption) (*Account, error)
 }
@@ -119,12 +119,12 @@ func (c *authServiceClient) GetAccountByID(ctx context.Context, in *GetIDRequest
 	return out, nil
 }
 
-func (c *authServiceClient) GetStatemet(ctx context.Context, in *StatementRequest, opts ...grpc.CallOption) (AuthService_GetStatemetClient, error) {
-	stream, err := c.cc.NewStream(ctx, &AuthService_ServiceDesc.Streams[1], "/auth.AuthService/GetStatemet", opts...)
+func (c *authServiceClient) GetStatement(ctx context.Context, in *StatementGet, opts ...grpc.CallOption) (AuthService_GetStatementClient, error) {
+	stream, err := c.cc.NewStream(ctx, &AuthService_ServiceDesc.Streams[1], "/auth.AuthService/GetStatement", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &authServiceGetStatemetClient{stream}
+	x := &authServiceGetStatementClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -134,16 +134,16 @@ func (c *authServiceClient) GetStatemet(ctx context.Context, in *StatementReques
 	return x, nil
 }
 
-type AuthService_GetStatemetClient interface {
+type AuthService_GetStatementClient interface {
 	Recv() (*Statement, error)
 	grpc.ClientStream
 }
 
-type authServiceGetStatemetClient struct {
+type authServiceGetStatementClient struct {
 	grpc.ClientStream
 }
 
-func (x *authServiceGetStatemetClient) Recv() (*Statement, error) {
+func (x *authServiceGetStatementClient) Recv() (*Statement, error) {
 	m := new(Statement)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -202,7 +202,7 @@ type AuthServiceServer interface {
 	DepositAccount(context.Context, *DepositRequest) (*DepositResponse, error)
 	// for payment
 	GetAccountByID(context.Context, *GetIDRequest) (*Account, error)
-	GetStatemet(*StatementRequest, AuthService_GetStatemetServer) error
+	GetStatement(*StatementGet, AuthService_GetStatementServer) error
 	CreateStatement(AuthService_CreateStatementServer) error
 	UpdateBalance(context.Context, *UpdateBalanceRequest) (*Account, error)
 	mustEmbedUnimplementedAuthServiceServer()
@@ -230,8 +230,8 @@ func (UnimplementedAuthServiceServer) DepositAccount(context.Context, *DepositRe
 func (UnimplementedAuthServiceServer) GetAccountByID(context.Context, *GetIDRequest) (*Account, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAccountByID not implemented")
 }
-func (UnimplementedAuthServiceServer) GetStatemet(*StatementRequest, AuthService_GetStatemetServer) error {
-	return status.Errorf(codes.Unimplemented, "method GetStatemet not implemented")
+func (UnimplementedAuthServiceServer) GetStatement(*StatementGet, AuthService_GetStatementServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetStatement not implemented")
 }
 func (UnimplementedAuthServiceServer) CreateStatement(AuthService_CreateStatementServer) error {
 	return status.Errorf(codes.Unimplemented, "method CreateStatement not implemented")
@@ -363,24 +363,24 @@ func _AuthService_GetAccountByID_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_GetStatemet_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(StatementRequest)
+func _AuthService_GetStatement_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(StatementGet)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(AuthServiceServer).GetStatemet(m, &authServiceGetStatemetServer{stream})
+	return srv.(AuthServiceServer).GetStatement(m, &authServiceGetStatementServer{stream})
 }
 
-type AuthService_GetStatemetServer interface {
+type AuthService_GetStatementServer interface {
 	Send(*Statement) error
 	grpc.ServerStream
 }
 
-type authServiceGetStatemetServer struct {
+type authServiceGetStatementServer struct {
 	grpc.ServerStream
 }
 
-func (x *authServiceGetStatemetServer) Send(m *Statement) error {
+func (x *authServiceGetStatementServer) Send(m *Statement) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -467,8 +467,8 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "GetStatemet",
-			Handler:       _AuthService_GetStatemet_Handler,
+			StreamName:    "GetStatement",
+			Handler:       _AuthService_GetStatement_Handler,
 			ServerStreams: true,
 		},
 		{

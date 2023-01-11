@@ -9,6 +9,7 @@ import (
 	sql "database/sql"
 	reflect "reflect"
 
+	paymentpb "github.com/Edbeer/payment-grpc/proto"
 	types "github.com/Edbeer/payment-grpc/types"
 	gomock "github.com/golang/mock/gomock"
 )
@@ -34,6 +35,21 @@ func NewMockStorage(ctrl *gomock.Controller) *MockStorage {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 	return m.recorder
+}
+
+// GetPaymentByID mocks base method.
+func (m *MockStorage) GetPaymentByID(ctx context.Context, req *paymentpb.PaidRequest) (*types.Payment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPaymentByID", ctx, req)
+	ret0, _ := ret[0].(*types.Payment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPaymentByID indicates an expected call of GetPaymentByID.
+func (mr *MockStorageMockRecorder) GetPaymentByID(ctx, req interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentByID", reflect.TypeOf((*MockStorage)(nil).GetPaymentByID), ctx, req)
 }
 
 // SavePayment mocks base method.

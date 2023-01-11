@@ -63,7 +63,7 @@ func (s *AuthService) GetAccount(req *authpb.GetRequest, stream authpb.AuthServi
 			return status.Error(codes.Canceled, "Stream has ended")
 		default:
 			for _, account := range accounts {
-				if err := stream.SendMsg(accountToProto(account)); err != nil {
+				if err := stream.Send(accountToProto(account)); err != nil {
 					return status.Error(codes.Canceled, "Stream has ended")
 				}
 			}
@@ -115,7 +115,7 @@ func (s *AuthService) UpdateBalance(ctx context.Context, req *authpb.UpdateBalan
 }
 
 func (s *AuthService) CreateStatement(stream authpb.AuthService_CreateStatementServer) error {
-	for {
+	for i := 0; i < 2; i++ {
 		statement, err := stream.Recv()
 		if err == io.EOF {
 			break
@@ -131,6 +131,32 @@ func (s *AuthService) CreateStatement(stream authpb.AuthService_CreateStatementS
 			return err
 		}
 	}
+	return nil
+}
+
+func (s *AuthService) GetStatement(req *authpb.StatementGet, stream authpb.AuthService_GetStatementServer) error {
+	account, err := s.storage.GetAccountByID(stream.Context(), &authpb.GetIDRequest{
+		Id: req.AccountId,
+	})
+	if err != nil {
+		return err
+	}
+	for {
+		select {
+		case <-stream.Context().Done():
+			return status.Error(codes.Canceled, "Stream has ended")
+		default:
+			for _, statement := range account.Statement {
+				if err := stream.Send(&authpb.Statement{
+					PaymentId: statement,
+				}); err != nil {
+					return err
+				}
+			}
+		}
+		break
+	}
+
 	return nil
 }
 

@@ -14,7 +14,7 @@ service AuthService {
     rpc DepositAccount(DepositRequest) returns (DepositResponse) {};
     // for payment
     rpc GetAccountByID(GetIDRequest) returns (Account) {};
-    rpc GetStatemet(StatementRequest) returns (stream Statement) {};
+    rpc GetStatement(StatementGet) returns (stream Statement) {};
     rpc CreateStatement(stream StatementRequest) returns (stream StatementResponse) {};
     rpc UpdateBalance(UpdateBalanceRequest) returns (Account) {};
 }
@@ -24,6 +24,11 @@ message UpdateBalanceRequest {
     string id = 1;
     uint64 balance = 2;
     uint64 blocked_money = 3;
+}
+
+message StatementGet {
+    // account id
+    string account_id = 1;
 }
 
 message StatementRequest {
@@ -92,8 +97,5 @@ message Account {
 }
 
 message Statement {
-    string account_id = 1;
-    string payment_id = 2;
-    string operation = 3;
-    string status = 4;
+    string payment_id = 1;
 }

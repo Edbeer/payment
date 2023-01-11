@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+
 	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	mockclient "github.com/Edbeer/auth-grpc/client/mock"
 	authpb "github.com/Edbeer/auth-grpc/proto"
 	mockstore "github.com/Edbeer/auth-grpc/service/mock"
 	"github.com/Edbeer/auth-grpc/types"
@@ -96,7 +98,7 @@ func Test_UpdateAccount(t *testing.T) {
 	mockStorage.EXPECT().UpdateAccount(context.Background(), reqToUpdate).Return(acc, nil).AnyTimes()
 	require.Equal(t, reqToUpdate.FirstName, acc.FirstName)
 	require.Equal(t, reqToUpdate.CardNumber, acc.CardNumber)
-	
+
 	account, err := mockService.UpdateAccount(context.Background(), reqToUpdate)
 	require.NoError(t, err)
 	require.Equal(t, account, accountToProto(acc))
@@ -107,10 +109,6 @@ func Test_DeleteAccount(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
-	db, _, err := sqlmock.New()
-	require.NoError(t, err)
-	defer db.Close()
 
 	mockStorage := mockstore.NewMockStorage(ctrl)
 	mockService := NewAuthService(mockStorage)
@@ -134,10 +132,6 @@ func Test_DepositAccount(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	db, _, err := sqlmock.New()
-	require.NoError(t, err)
-	defer db.Close()
-
 	mockStorage := mockstore.NewMockStorage(ctrl)
 	mockService := NewAuthService(mockStorage)
 
@@ -155,4 +149,231 @@ func Test_DepositAccount(t *testing.T) {
 	result, err := mockService.DepositAccount(context.Background(), reqDep)
 	require.NoError(t, err)
 	require.Equal(t, result, resp)
+}
+
+func Test_UpdateBalance(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStorage := mockstore.NewMockStorage(ctrl)
+	mockService := NewAuthService(mockStorage)
+
+	req := &authpb.UpdateBalanceRequest{
+		Id:           uuid.New().String(),
+		Balance:      50,
+		BlockedMoney: 50,
+	}
+	uid, _ := uuid.Parse(req.Id)
+	acc := &types.Account{
+		ID:               uid,
+		FirstName:        "Pasha1",
+		LastName:         "Volkov",
+		CardNumber:       "4444444444444443",
+		CardExpiryMonth:  "12",
+		CardExpiryYear:   "24",
+		CardSecurityCode: "123",
+		Balance:          50,
+		BlockedMoney:     50,
+		CreatedAt:        time.Now(),
+	}
+	mockStorage.EXPECT().SaveBalance(context.Background(), req).Return(acc, nil).AnyTimes()
+
+	account, err := mockService.UpdateBalance(context.Background(), req)
+	require.NoError(t, err)
+	require.Equal(t, account.Balance, acc.Balance)
+	require.Equal(t, account.BlockedMoney, acc.BlockedMoney)
+}
+
+func Test_GetAccountByID(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	db, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	mockStorage := mockstore.NewMockStorage(ctrl)
+	mockService := NewAuthService(mockStorage)
+
+	req := &authpb.GetIDRequest{
+		Id: uuid.New().String(),
+	}
+
+	uid, _ := uuid.Parse(req.Id)
+	acc := &types.Account{
+		ID:               uid,
+		FirstName:        "Pasha1",
+		LastName:         "Volkov",
+		CardNumber:       "4444444444444443",
+		CardExpiryMonth:  "12",
+		CardExpiryYear:   "24",
+		CardSecurityCode: "123",
+		Balance:          50,
+		BlockedMoney:     50,
+		CreatedAt:        time.Now(),
+	}
+
+	mockStorage.EXPECT().GetAccountByID(context.Background(), req).Return(acc, nil).AnyTimes()
+
+	account, err := mockService.GetAccountByID(context.Background(), req)
+	require.NoError(t, err)
+	require.Equal(t, account.Id, acc.ID.String())
+	require.Equal(t, account.Balance, acc.Balance)
+	require.Equal(t, account.BlockedMoney, acc.BlockedMoney)
+}
+
+func Test_Balance(t *testing.T) {
+
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	storage := mockstore.NewMockStorage(ctrl)
+	service := NewAuthService(storage)
+
+	req := &authpb.CreateRequest{
+		FirstName:        "Pasha",
+		LastName:         "Volkov",
+		CardNumber:       "4444444444444444",
+		CardExpiryMonth:  "12",
+		CardExpiryYear:   "24",
+		CardSecurityCode: "123",
+	}
+	reqAcc := types.NewAccount(req)
+	acc := &types.Account{
+		ID:               reqAcc.ID,
+		FirstName:        "Pasha",
+		LastName:         "Volkov",
+		CardNumber:       "4444444444444444",
+		CardExpiryMonth:  "12",
+		CardExpiryYear:   "24",
+		CardSecurityCode: "123",
+		Balance:          0,
+		BlockedMoney:     0,
+		CreatedAt:        time.Now(),
+	}
+	storage.EXPECT().CreateAccount(context.Background(), gomock.Eq(req)).Return(acc, nil).AnyTimes()
+
+	account, err := service.CreateAccount(context.Background(), req)
+	require.NoError(t, err)
+	require.Nil(t, err)
+	require.Equal(t, accountToProto(acc), account)
+}
+
+func Test_GetAccount(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	storage := mockstore.NewMockStorage(ctrl)
+	service := NewAuthService(storage)
+	acc := &types.Account{
+		ID:               uuid.New(),
+		FirstName:        "Pasha",
+		LastName:         "Volkov",
+		CardNumber:       "4444444444444444",
+		CardExpiryMonth:  "12",
+		CardExpiryYear:   "24",
+		CardSecurityCode: "123",
+		Balance:          0,
+		BlockedMoney:     0,
+		Statement:        []string{},
+		CreatedAt:        time.Now(),
+	}
+	accs := []*types.Account{acc}
+	streamServer := mockclient.NewMockAuthService_GetAccountServer(ctrl)
+
+	streamServer.EXPECT().Context().Return(context.Background()).AnyTimes()
+	storage.EXPECT().GetAccount(context.Background()).Return(accs, nil).AnyTimes()
+	streamServer.EXPECT().Send(accountToProto(acc)).Return(nil).AnyTimes()
+
+	err := service.GetAccount(&authpb.GetRequest{}, streamServer)
+	require.NoError(t, err)
+	require.Nil(t, err)
+}
+
+func Test_CreateStatement(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	storage := mockstore.NewMockStorage(ctrl)
+	service := NewAuthService(storage)
+
+	req1 := &authpb.StatementRequest{
+		AccountId: uuid.New().String(),
+		PaymentId: uuid.New().String(),
+	}
+
+	req2 := &authpb.StatementRequest{
+		AccountId: uuid.New().String(),
+		PaymentId: uuid.New().String(),
+	}
+
+	streamServer := mockclient.NewMockAuthService_CreateStatementServer(ctrl)
+
+	streamServer.EXPECT().Context().Return(context.Background()).AnyTimes()
+
+	streamServer.EXPECT().Recv().Return(req1, nil).AnyTimes()
+	storage.EXPECT().UpdateStatement(context.Background(), req1).Return([]string{req1.PaymentId}, nil).AnyTimes()
+	streamServer.EXPECT().Send(&authpb.StatementResponse{}).Return(nil).AnyTimes()
+
+	streamServer.EXPECT().Recv().Return(req2, nil).AnyTimes()
+	storage.EXPECT().UpdateStatement(context.Background(), req2).Return([]string{req1.PaymentId, req2.PaymentId}, nil).AnyTimes()
+	streamServer.EXPECT().Send(&authpb.StatementResponse{}).Return(nil).AnyTimes()
+
+	err := service.CreateStatement(streamServer)
+	require.NoError(t, err)
+	require.Nil(t, err)
+}
+
+func Test_GetStatement(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	storage := mockstore.NewMockStorage(ctrl)
+	service := NewAuthService(storage)
+
+	req := &authpb.StatementGet{
+		AccountId: uuid.New().String(),
+	}
+
+	uid, _ := uuid.Parse(req.AccountId)
+	st := &authpb.Statement{
+		PaymentId: uuid.New().String(),
+	}
+	acc := &types.Account{
+		ID:               uid,
+		FirstName:        "Pasha1",
+		LastName:         "Volkov1",
+		CardNumber:       "4444444444444444",
+		CardExpiryMonth:  "12",
+		CardExpiryYear:   "24",
+		CardSecurityCode: "123",
+		Balance:          0,
+		BlockedMoney:     0,
+		Statement:        []string{st.PaymentId},
+		CreatedAt:        time.Now(),
+	}
+
+	streamServer := mockclient.NewMockAuthService_GetStatementServer(ctrl)
+
+	storage.EXPECT().GetAccountByID(context.Background(), &authpb.GetIDRequest{
+		Id: req.AccountId,
+	}).Return(acc, nil).AnyTimes()
+	streamServer.EXPECT().Context().Return(context.Background()).AnyTimes()
+	streamServer.EXPECT().Send(st).Return(nil).AnyTimes()
+
+	err := service.GetStatement(req, streamServer)
+	require.NoError(t, err)
+	require.Nil(t, err)
 }
