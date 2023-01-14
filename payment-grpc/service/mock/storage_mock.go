@@ -6,7 +6,6 @@ package mock
 
 import (
 	context "context"
-	sql "database/sql"
 	reflect "reflect"
 
 	paymentpb "github.com/Edbeer/payment-grpc/proto"
@@ -53,16 +52,16 @@ func (mr *MockStorageMockRecorder) GetPaymentByID(ctx, req interface{}) *gomock.
 }
 
 // SavePayment mocks base method.
-func (m *MockStorage) SavePayment(ctx context.Context, tx *sql.Tx, payment *types.Payment) (*types.Payment, error) {
+func (m *MockStorage) SavePayment(ctx context.Context, payment *types.Payment) (*types.Payment, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SavePayment", ctx, tx, payment)
+	ret := m.ctrl.Call(m, "SavePayment", ctx, payment)
 	ret0, _ := ret[0].(*types.Payment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SavePayment indicates an expected call of SavePayment.
-func (mr *MockStorageMockRecorder) SavePayment(ctx, tx, payment interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) SavePayment(ctx, payment interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePayment", reflect.TypeOf((*MockStorage)(nil).SavePayment), ctx, tx, payment)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePayment", reflect.TypeOf((*MockStorage)(nil).SavePayment), ctx, payment)
 }

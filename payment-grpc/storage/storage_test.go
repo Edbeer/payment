@@ -90,7 +90,6 @@ func Test_SavePayment(t *testing.T) {
 			50,
 			payment.CreatedAt,
 		)
-
 		mock.ExpectBegin()
 		mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO payment (merchant, 
 			customer, card_number, card_expiry_month,
@@ -108,9 +107,8 @@ func Test_SavePayment(t *testing.T) {
 					payment.Status,
 					payment.Amount,
 					payment.CreatedAt,).WillReturnRows(rows)
-
-		tx, _ := db.BeginTx(context.Background(), nil)
-		pay, err := psql.SavePayment(context.Background(), tx, payment)
+		mock.ExpectCommit()			
+		pay, err := psql.SavePayment(context.Background(), payment)
 		require.NoError(t, err)
 		require.NotNil(t, pay)
 	})

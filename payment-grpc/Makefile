@@ -30,3 +30,6 @@ migrate-up:
 
 migrate-down:
 	migrate -path ./migrations -database "postgres://postgres:postgres@localhost:5436/paymentdb?sslmode=disable" down
+
+mock:
+	mockgen github.com/Edbeer/payment-grpc/proto PaymentServiceServer > client/mock/client_mock.go

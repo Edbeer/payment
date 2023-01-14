@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"testing"
 	"time"
@@ -273,7 +274,7 @@ func Test_GetAccount(t *testing.T) {
 
 	storage := mockstore.NewMockStorage(ctrl)
 	service := NewAuthService(storage)
-	acc := &types.Account{
+	acc1 := &types.Account{
 		ID:               uuid.New(),
 		FirstName:        "Pasha",
 		LastName:         "Volkov",
@@ -286,12 +287,35 @@ func Test_GetAccount(t *testing.T) {
 		Statement:        []string{},
 		CreatedAt:        time.Now(),
 	}
-	accs := []*types.Account{acc}
+	acc2 := &types.Account{
+		ID:               uuid.New(),
+		FirstName:        "Pasha",
+		LastName:         "Volkov",
+		CardNumber:       "4444444444444443",
+		CardExpiryMonth:  "12",
+		CardExpiryYear:   "24",
+		CardSecurityCode: "123",
+		Balance:          0,
+		BlockedMoney:     0,
+		Statement:        []string{},
+		CreatedAt:        time.Now(),
+	}
+	accs := []*types.Account{acc1, acc2}
 	streamServer := mockclient.NewMockAuthService_GetAccountServer(ctrl)
 
 	streamServer.EXPECT().Context().Return(context.Background()).AnyTimes()
 	storage.EXPECT().GetAccount(context.Background()).Return(accs, nil).AnyTimes()
-	streamServer.EXPECT().Send(accountToProto(acc)).Return(nil).AnyTimes()
+	streamServer.EXPECT().Send(gomock.Any()).DoAndReturn(
+		func(req *authpb.Account) error {
+			if req.Id == acc1.ID.String() {
+				return nil
+			}
+			if req.Id == acc2.ID.String() {
+				return nil
+			}
+			return fmt.Errorf("not found")
+		},
+	).AnyTimes()
 
 	err := service.GetAccount(&authpb.GetRequest{}, streamServer)
 	require.NoError(t, err)
@@ -326,7 +350,7 @@ func Test_CreateStatement(t *testing.T) {
 	streamServer.EXPECT().Send(&authpb.StatementResponse{}).Return(nil).AnyTimes()
 
 	streamServer.EXPECT().Recv().Return(req2, nil).AnyTimes()
-	storage.EXPECT().UpdateStatement(context.Background(), req2).Return([]string{req1.PaymentId, req2.PaymentId}, nil).AnyTimes()
+	storage.EXPECT().UpdateStatement(context.Background(), req2).Return([]string{req2.PaymentId}, nil).AnyTimes()
 	streamServer.EXPECT().Send(&authpb.StatementResponse{}).Return(nil).AnyTimes()
 
 	err := service.CreateStatement(streamServer)
@@ -348,7 +372,10 @@ func Test_GetStatement(t *testing.T) {
 	}
 
 	uid, _ := uuid.Parse(req.AccountId)
-	st := &authpb.Statement{
+	st1 := &authpb.Statement{
+		PaymentId: uuid.New().String(),
+	}
+	st2 := &authpb.Statement{
 		PaymentId: uuid.New().String(),
 	}
 	acc := &types.Account{
@@ -361,7 +388,7 @@ func Test_GetStatement(t *testing.T) {
 		CardSecurityCode: "123",
 		Balance:          0,
 		BlockedMoney:     0,
-		Statement:        []string{st.PaymentId},
+		Statement:        []string{st1.PaymentId, st2.PaymentId},
 		CreatedAt:        time.Now(),
 	}
 
@@ -371,7 +398,17 @@ func Test_GetStatement(t *testing.T) {
 		Id: req.AccountId,
 	}).Return(acc, nil).AnyTimes()
 	streamServer.EXPECT().Context().Return(context.Background()).AnyTimes()
-	streamServer.EXPECT().Send(st).Return(nil).AnyTimes()
+	streamServer.EXPECT().Send(gomock.Any()).DoAndReturn(
+		func(req *authpb.Statement) error {
+			if req.PaymentId == st1.PaymentId {
+				return nil
+			}
+			if req.PaymentId == st2.PaymentId {
+				return nil
+			}
+			return fmt.Errorf("not found")
+		},
+	).AnyTimes()
 
 	err := service.GetStatement(req, streamServer)
 	require.NoError(t, err)

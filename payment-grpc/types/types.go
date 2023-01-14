@@ -9,7 +9,7 @@ import (
 )
 
 type Payment struct {
-	PaymentId       uuid.UUID `json:"id"`
+	PaymentId       uuid.UUID `json:"payment_id"`
 	Merchant        uuid.UUID `json:"merchant"`
 	Customer        uuid.UUID `json:"customer"`
 	CardNumber      string    `json:"card_number"`
@@ -63,7 +63,3 @@ func CreateCompletePayment(paidReq *paymentpb.PaidRequest, referncedPayment *Pay
 	}
 }
 
-type Statement struct {
-	PaymentId   string `json:"payment_id"`
-	AccountId  string `json:"account_id"`
-}

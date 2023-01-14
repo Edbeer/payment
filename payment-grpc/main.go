@@ -31,7 +31,7 @@ func main() {
 	client := authpb.NewAuthServiceClient(conn)
 
 	// payment service
-	srv := service.NewPaymentService(storage, client, db)
+	srv := service.NewPaymentService(storage, client)
 	// grpc server
 	server := grpc.NewServer(grpc.MaxConcurrentStreams(1000))
 	// register service
