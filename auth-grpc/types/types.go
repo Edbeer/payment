@@ -18,6 +18,7 @@ type Account struct {
 	CardSecurityCode string    `json:"card_security_code"`
 	Balance          uint64    `json:"balance"`
 	BlockedMoney     uint64    `json:"blocked_money"`
+	Statement        []string  `json:"statement"`
 	CreatedAt        time.Time `json:"created_at"`
 }
 
@@ -32,6 +33,8 @@ func NewAccount(req *authpb.CreateRequest) *Account {
 		CardSecurityCode: req.CardSecurityCode,
 		Balance:          0,
 		BlockedMoney:     0,
+		Statement:        []string{},
 		CreatedAt:        time.Now(),
 	}
 }
+

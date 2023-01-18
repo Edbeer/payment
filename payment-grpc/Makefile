@@ -1,7 +1,7 @@
 build:
 	@go build -o ./bin/api
 
-run:
+run: build
 	@./bin/api
 
 docker:
@@ -10,7 +10,7 @@ docker:
 	-e POSTGRES_PASSWORD=postgres \
 	-e POSTGRES_USER=postgres \
 	-e POSTGRES_DB=paymentdb \
-	-p 5432:5432 -d postgres
+	-p 5436:5432 -d postgres:15.1
 
 docker-start:
 	docker start paymentdb
@@ -26,7 +26,10 @@ migrate-create:
 	migrate create -ext sql -dir ./migrations -seq paymentdb
 
 migrate-up:
-	migrate -path ./migrations -database "postgres://postgres:postgres@localhost:5432/paymentdb?sslmode=disable" up
+	migrate -path ./migrations -database "postgres://postgres:postgres@localhost:5436/paymentdb?sslmode=disable" up
 
 migrate-down:
-	migrate -path ./migrations -database "postgres://postgres:postgres@localhost:5432/paymentdb?sslmode=disable" down
+	migrate -path ./migrations -database "postgres://postgres:postgres@localhost:5436/paymentdb?sslmode=disable" down
+
+mock:
+	mockgen github.com/Edbeer/payment-grpc/proto PaymentServiceServer > client/mock/client_mock.go

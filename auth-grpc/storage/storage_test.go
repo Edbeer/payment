@@ -9,6 +9,7 @@ import (
 	authpb "github.com/Edbeer/auth-grpc/proto"
 	"github.com/Edbeer/auth-grpc/types"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,6 +43,7 @@ func Test_CreateAccount(t *testing.T) {
 			"card_expiry_year",
 			"card_security_code",
 			"balance", "blocked_money",
+			"statement",
 			"created_at",
 		}
 		rows := sqlmock.NewRows(colums).AddRow(
@@ -54,13 +56,14 @@ func Test_CreateAccount(t *testing.T) {
 			"123",
 			0,
 			0,
+			pq.Array(account.Statement),
 			account.CreatedAt,
 		)
 		mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO account (first_name, 
 			last_name, card_number, card_expiry_month, 
 			card_expiry_year, card_security_code, 
-			balance, blocked_money, created_at)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
+			balance, blocked_money, statement, created_at)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())
 				RETURNING *`)).WithArgs(
 			account.FirstName,
 			account.LastName,
@@ -69,7 +72,8 @@ func Test_CreateAccount(t *testing.T) {
 			account.CardExpiryYear,
 			account.CardSecurityCode,
 			account.Balance,
-			account.BlockedMoney,).WillReturnRows(rows)
+			account.BlockedMoney,
+			pq.Array(account.Statement),).WillReturnRows(rows)
 		createdUser, err := psql.CreateAccount(context.Background(), req)
 		require.NoError(t, err)
 		require.NotNil(t, createdUser)
@@ -116,6 +120,7 @@ func Test_UpdateAccount(t *testing.T) {
 			"card_expiry_year",
 			"card_security_code",
 			"balance", "blocked_money",
+			"statement",
 			"created_at",
 		}
 		rows := sqlmock.NewRows(colums).AddRow(
@@ -128,6 +133,7 @@ func Test_UpdateAccount(t *testing.T) {
 			"123",
 			0,
 			0,
+			pq.Array(account.Statement),
 			account.CreatedAt,
 		)
 
@@ -210,6 +216,7 @@ func Test_DepositAccount(t *testing.T) {
 			"card_expiry_year",
 			"card_security_code",
 			"balance", "blocked_money",
+			"statement",
 			"created_at",
 		}
 		rows := sqlmock.NewRows(colums).AddRow(
@@ -222,6 +229,7 @@ func Test_DepositAccount(t *testing.T) {
 			"123",
 			50,
 			0,
+			pq.Array(account.Statement),
 			account.CreatedAt,
 		)
 
@@ -264,6 +272,7 @@ func Test_GetAccount(t *testing.T) {
 			"card_expiry_year",
 			"card_security_code",
 			"balance", "blocked_money",
+			"statement",
 			"created_at",
 		}
 		rows1 := sqlmock.NewRows(colums).AddRow(
@@ -276,6 +285,7 @@ func Test_GetAccount(t *testing.T) {
 			"924",
 			0,
 			0,
+			pq.Array(account1.Statement),
 			account1.CreatedAt,
 		)
 		req2 := &authpb.CreateRequest{
@@ -298,6 +308,7 @@ func Test_GetAccount(t *testing.T) {
 			"924",
 			0,
 			0,
+			pq.Array(account2.Statement),
 			account2.CreatedAt,
 		)
 
@@ -336,6 +347,7 @@ func Test_GetAccountByID(t *testing.T) {
 			"card_expiry_year",
 			"card_security_code",
 			"balance", "blocked_money",
+			"statement",
 			"created_at",
 		}
 		rows := sqlmock.NewRows(colums).AddRow(
@@ -348,6 +360,7 @@ func Test_GetAccountByID(t *testing.T) {
 			"924",
 			0,
 			0,
+			pq.Array(account.Statement),
 			account.CreatedAt,
 		)
 		reqID := &authpb.GetIDRequest{
@@ -357,5 +370,131 @@ func Test_GetAccountByID(t *testing.T) {
 		acc, err := psql.GetAccountByID(context.Background(), reqID)
 		require.NoError(t, err)
 		require.NotNil(t, acc)
+	})
+}
+
+func Test_SaveBalance(t *testing.T) {
+	t.Parallel()
+
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	psql := NewPostgresStorage(db)
+
+	t.Run("SaveBalance", func(t *testing.T) {
+		req := &authpb.CreateRequest{
+			FirstName:        "Pasha1",
+			LastName:         "volkov1",
+			CardNumber:       "444444444444444",
+			CardExpiryMonth:  "12",
+			CardExpiryYear:   "24",
+			CardSecurityCode: "924",
+		}
+		account := types.NewAccount(req)
+
+		reqB := &authpb.UpdateBalanceRequest{
+			Id:           account.ID.String(),
+			Balance:      0,
+			BlockedMoney: 50,
+		}
+
+		colums := []string{
+			"id",
+			"first_name",
+			"last_name",
+			"card_number",
+			"card_expiry_month",
+			"card_expiry_year",
+			"card_security_code",
+			"balance", "blocked_money",
+			"statement",
+			"created_at",
+		}
+		rows := sqlmock.NewRows(colums).AddRow(
+			account.ID,
+			"Pasha1",
+			"volkov1",
+			"444444444444444",
+			"12",
+			"24",
+			"924",
+			0,
+			50,
+			pq.Array(account.Statement),
+			account.CreatedAt,
+		)
+
+		mock.ExpectBegin()
+		mock.ExpectQuery(regexp.QuoteMeta(`UPDATE account
+		SET balance = COALESCE($1, balance),
+			blocked_money = COALESCE($2, blocked_money)
+		WHERE id = $3
+		RETURNING *`)).WithArgs(0, 50, account.ID).WillReturnRows(rows)
+		mock.ExpectCommit()
+		acc, err := psql.SaveBalance(context.Background(), reqB)
+		require.NoError(t, err)
+		require.NotNil(t, acc)
+	})
+}
+
+func Test_UpdateStatement(t *testing.T) {
+	t.Parallel()
+
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	psql := NewPostgresStorage(db)
+
+	t.Run("UpdateStatement", func(t *testing.T) {
+		reqAcc := &authpb.CreateRequest{
+			FirstName:        "Pasha1",
+			LastName:         "volkov1",
+			CardNumber:       "444444444444444",
+			CardExpiryMonth:  "12",
+			CardExpiryYear:   "24",
+			CardSecurityCode: "924",
+		}
+		account := types.NewAccount(reqAcc)
+		req := &authpb.StatementRequest{
+			AccountId: account.ID.String(),
+			PaymentId: uuid.New().String(),
+		}
+		colums := []string{
+			"id",
+			"first_name",
+			"last_name",
+			"card_number",
+			"card_expiry_month",
+			"card_expiry_year",
+			"card_security_code",
+			"balance", "blocked_money",
+			"statement",
+			"created_at",
+		}
+		rows := sqlmock.NewRows(colums).AddRow(
+			account.ID,
+			"Pasha1",
+			"volkov1",
+			"444444444444444",
+			"12",
+			"24",
+			"924",
+			50,
+			50,
+			pq.Array([]string{req.PaymentId}),
+			account.CreatedAt,
+		)
+
+		mock.ExpectBegin()
+		mock.ExpectQuery(regexp.QuoteMeta(`UPDATE account
+		SET statement = array_append(statement, $1)
+		WHERE id = $2
+		RETURNING *`)).WithArgs(req.PaymentId, req.AccountId).WillReturnRows(rows)
+		mock.ExpectCommit()
+		arr, err := psql.UpdateStatement(context.Background(), req)
+		require.NoError(t, err)
+		require.NotNil(t, arr)
 	})
 }
