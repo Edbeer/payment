@@ -160,14 +160,6 @@ func (s *AuthService) GetStatement(req *authpb.StatementGet, stream authpb.AuthS
 	return nil
 }
 
-// func (s *AuthService) CreateStatement(ctx context.Context, req *authpb.StatementRequest) (*authpb.StatementResponse, error) {
-// 	_, err := s.storage.UpdateStatement(ctx, req)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &authpb.StatementResponse{}, nil
-// }
-
 func accountToProto(acc *types.Account) *authpb.Account {
 	return &authpb.Account{
 		Id:               acc.ID.String(),

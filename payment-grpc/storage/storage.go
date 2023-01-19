@@ -19,7 +19,7 @@ func NewPostgresStorage(db *sql.DB) *PostgresStorage {
 	}
 }
 
-func (s *PostgresStorage) SavePayment(ctx context.Context, payment *types.Payment) (*types.Payment, error) {
+func (s *PostgresStorage) SavePayment(ctx context.Context, payment *types.Payment, tx *sql.Tx) (*types.Payment, error) {
 	query := `INSERT INTO payment (merchant, 
 		customer, card_number, card_expiry_month,
 		card_expiry_year, currency, operation,
@@ -27,14 +27,7 @@ func (s *PostgresStorage) SavePayment(ctx context.Context, payment *types.Paymen
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 			RETURNING *`
 	pay := &types.Payment{}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if tx != nil {
-		defer tx.Rollback()
-	}
-	if err != nil {
-		return nil, err
-	}
-	if err := s.db.QueryRowContext(
+	if err := tx.QueryRowContext(
 		ctx, query,
 		payment.Merchant,
 		payment.Customer,
@@ -54,9 +47,6 @@ func (s *PostgresStorage) SavePayment(ctx context.Context, payment *types.Paymen
 		&pay.Status, &pay.Amount,
 		&pay.CreatedAt,
 	); err != nil {
-		return nil, err
-	}
-	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	return pay, nil

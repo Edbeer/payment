@@ -27,7 +27,7 @@ func Test_CreatePayment(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	db, _, err := sqlmock.New()
+	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -35,7 +35,7 @@ func Test_CreatePayment(t *testing.T) {
 		storagePay := mockpay.NewMockStorage(ctrl)
 		clientAuth := mock_proto.NewMockAuthServiceClient(ctrl)
 
-		servicePay := NewPaymentService(storagePay, clientAuth)
+		servicePay := NewPaymentService(storagePay, clientAuth, db)
 		req := &paymentpb.CreateRequest{
 			Merchant:         uuid.New().String(),
 			Customer:         uuid.New().String(),
@@ -81,6 +81,7 @@ func Test_CreatePayment(t *testing.T) {
 			CreatedAt:        timestamppb.Now(),
 		}
 
+		mock.ExpectBegin()
 		clientAuth.EXPECT().GetAccountByID(gomock.Any(), gomock.Any()).
 			DoAndReturn(
 				func(ctx context.Context, req *authpb.GetIDRequest, opts ...grpc.CallOption) (*authpb.Account, error) {
@@ -113,7 +114,7 @@ func Test_CreatePayment(t *testing.T) {
 		).AnyTimes()
 
 		payment := types.CreateAuthPayment(req, customer, merchant, "Approved")
-		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any()).Return(payment, nil).AnyTimes()
+		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any(), gomock.Any()).Return(payment, nil).AnyTimes()
 
 		sts = append(sts, &authpb.StatementRequest{
 			AccountId: merchant.Id,
@@ -139,7 +140,7 @@ func Test_CreatePayment(t *testing.T) {
 		).AnyTimes()
 		streamSts.EXPECT().Recv().Return(&authpb.StatementResponse{}, nil).AnyTimes()
 		streamSts.EXPECT().CloseSend().Return(nil).AnyTimes()
-
+		mock.ExpectCommit()
 		st, err := servicePay.CreatePayment(context.Background(), req)
 		require.NoError(t, err)
 		require.NotNil(t, st)
@@ -151,7 +152,7 @@ func Test_CreatePayment(t *testing.T) {
 		storagePay := mockpay.NewMockStorage(ctrl)
 		clientAuth := mock_proto.NewMockAuthServiceClient(ctrl)
 
-		servicePay := NewPaymentService(storagePay, clientAuth)
+		servicePay := NewPaymentService(storagePay, clientAuth, db)
 		req := &paymentpb.CreateRequest{
 			Merchant:         uuid.New().String(),
 			Customer:         uuid.New().String(),
@@ -199,6 +200,8 @@ func Test_CreatePayment(t *testing.T) {
 
 		require.NotEqual(t, customer.CardNumber, req.CardNumber)
 
+		mock.ExpectBegin()
+
 		clientAuth.EXPECT().GetAccountByID(gomock.Any(), gomock.Any()).
 			DoAndReturn(
 				func(ctx context.Context, req *authpb.GetIDRequest, opts ...grpc.CallOption) (*authpb.Account, error) {
@@ -213,7 +216,7 @@ func Test_CreatePayment(t *testing.T) {
 			).AnyTimes()
 
 		payment := types.CreateAuthPayment(req, customer, merchant, "wrong payment request")
-		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any()).Return(payment, nil).AnyTimes()
+		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any(), gomock.Any()).Return(payment, nil).AnyTimes()
 
 		sts := []*authpb.StatementRequest{}
 		sts = append(sts, &authpb.StatementRequest{
@@ -229,7 +232,7 @@ func Test_CreatePayment(t *testing.T) {
 		}).Return(nil).AnyTimes()
 		streamSts.EXPECT().Recv().Return(&authpb.StatementResponse{}, nil).AnyTimes()
 		streamSts.EXPECT().CloseSend().Return(nil).AnyTimes()
-
+		mock.ExpectCommit()
 		st, err := servicePay.CreatePayment(context.Background(), req)
 		require.NoError(t, err)
 		require.NotNil(t, st)
@@ -241,7 +244,7 @@ func Test_CreatePayment(t *testing.T) {
 		storagePay := mockpay.NewMockStorage(ctrl)
 		clientAuth := mock_proto.NewMockAuthServiceClient(ctrl)
 
-		servicePay := NewPaymentService(storagePay, clientAuth)
+		servicePay := NewPaymentService(storagePay, clientAuth, db)
 
 		req := &paymentpb.CreateRequest{
 			Merchant:         uuid.New().String(),
@@ -288,6 +291,8 @@ func Test_CreatePayment(t *testing.T) {
 			CreatedAt:        timestamppb.Now(),
 		}
 
+		mock.ExpectBegin()
+
 		clientAuth.EXPECT().GetAccountByID(gomock.Any(), gomock.Any()).
 			DoAndReturn(
 				func(ctx context.Context, req *authpb.GetIDRequest, opts ...grpc.CallOption) (*authpb.Account, error) {
@@ -302,7 +307,7 @@ func Test_CreatePayment(t *testing.T) {
 			).AnyTimes()
 
 		payment := types.CreateAuthPayment(req, customer, merchant, "Insufficient funds")
-		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any()).Return(payment, nil).AnyTimes()
+		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any(), gomock.Any()).Return(payment, nil).AnyTimes()
 
 		sts := []*authpb.StatementRequest{}
 		sts = append(sts, &authpb.StatementRequest{
@@ -318,7 +323,7 @@ func Test_CreatePayment(t *testing.T) {
 		}).Return(nil).AnyTimes()
 		streamSts.EXPECT().Recv().Return(&authpb.StatementResponse{}, nil).AnyTimes()
 		streamSts.EXPECT().CloseSend().Return(nil).AnyTimes()
-
+		mock.ExpectCommit()
 		st, err := servicePay.CreatePayment(context.Background(), req)
 		require.NoError(t, err)
 		require.NotNil(t, st)
@@ -333,7 +338,7 @@ func Test_CapturePayment(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	db, _, err := sqlmock.New()
+	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -341,7 +346,7 @@ func Test_CapturePayment(t *testing.T) {
 		storagePay := mockpay.NewMockStorage(ctrl)
 		clientAuth := mock_proto.NewMockAuthServiceClient(ctrl)
 
-		servicePay := NewPaymentService(storagePay, clientAuth)
+		servicePay := NewPaymentService(storagePay, clientAuth, db)
 
 		req := &paymentpb.PaidRequest{
 			PaymentId: uuid.New().String(),
@@ -363,6 +368,7 @@ func Test_CapturePayment(t *testing.T) {
 			CreatedAt:       time.Now(),
 		}
 
+		mock.ExpectBegin()
 		storagePay.EXPECT().GetPaymentByID(context.Background(), req).Return(refPayment, nil).AnyTimes()
 
 		reqIDC := &authpb.GetIDRequest{
@@ -413,7 +419,7 @@ func Test_CapturePayment(t *testing.T) {
 			).AnyTimes()
 
 		newPayment := types.CreateCompletePayment(req, refPayment, "Successful payment")
-		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any()).Return(newPayment, nil).AnyTimes()
+		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any(), gomock.Any()).Return(newPayment, nil).AnyTimes()
 
 		// update balance
 		customer.BlockedMoney = customer.BlockedMoney - req.Amount
@@ -459,7 +465,7 @@ func Test_CapturePayment(t *testing.T) {
 		).AnyTimes()
 		streamSts.EXPECT().Recv().Return(&authpb.StatementResponse{}, nil).AnyTimes()
 		streamSts.EXPECT().CloseSend().Return(nil).AnyTimes()
-
+		mock.ExpectCommit()
 		st, err := servicePay.CapturePayment(context.Background(), req)
 		require.NoError(t, err)
 		require.NotNil(t, st)
@@ -471,7 +477,7 @@ func Test_CapturePayment(t *testing.T) {
 		storagePay := mockpay.NewMockStorage(ctrl)
 		clientAuth := mock_proto.NewMockAuthServiceClient(ctrl)
 
-		servicePay := NewPaymentService(storagePay, clientAuth)
+		servicePay := NewPaymentService(storagePay, clientAuth, db)
 
 		req := &paymentpb.PaidRequest{
 			PaymentId: uuid.New().String(),
@@ -493,6 +499,7 @@ func Test_CapturePayment(t *testing.T) {
 			CreatedAt:       time.Now(),
 		}
 
+		mock.ExpectBegin()
 		storagePay.EXPECT().GetPaymentByID(context.Background(), req).Return(refPayment, nil).AnyTimes()
 
 		reqIDC := &authpb.GetIDRequest{
@@ -543,7 +550,7 @@ func Test_CapturePayment(t *testing.T) {
 			).AnyTimes()
 
 		newPayment := types.CreateCompletePayment(req, refPayment, "Invalid amount")
-		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any()).Return(newPayment, nil).AnyTimes()
+		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any(), gomock.Any()).Return(newPayment, nil).AnyTimes()
 		sts := []*authpb.StatementRequest{}
 		sts = append(sts, &authpb.StatementRequest{
 			AccountId: merchant.Id,
@@ -555,6 +562,7 @@ func Test_CapturePayment(t *testing.T) {
 		streamSts.EXPECT().Send(gomock.Any()).Return(nil).AnyTimes()
 		streamSts.EXPECT().Recv().Return(&authpb.StatementResponse{}, nil).AnyTimes()
 		streamSts.EXPECT().CloseSend().Return(nil).AnyTimes()
+		mock.ExpectCommit()
 
 		st, err := servicePay.CapturePayment(context.Background(), req)
 		require.NoError(t, err)
@@ -570,7 +578,7 @@ func Test_RefundPayment(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	db, _, err := sqlmock.New()
+	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -578,7 +586,7 @@ func Test_RefundPayment(t *testing.T) {
 		storagePay := mockpay.NewMockStorage(ctrl)
 		clientAuth := mock_proto.NewMockAuthServiceClient(ctrl)
 
-		servicePay := NewPaymentService(storagePay, clientAuth)
+		servicePay := NewPaymentService(storagePay, clientAuth, db)
 
 		req := &paymentpb.PaidRequest{
 			PaymentId: uuid.New().String(),
@@ -600,6 +608,7 @@ func Test_RefundPayment(t *testing.T) {
 			CreatedAt:       time.Now(),
 		}
 
+		mock.ExpectBegin()
 		storagePay.EXPECT().GetPaymentByID(context.Background(), req).Return(refPayment, nil).AnyTimes()
 
 		reqIDC := &authpb.GetIDRequest{
@@ -650,7 +659,7 @@ func Test_RefundPayment(t *testing.T) {
 			).AnyTimes()
 
 		newPayment := types.CreateCompletePayment(req, refPayment, "Successful refund")
-		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any()).Return(newPayment, nil).AnyTimes()
+		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any(), gomock.Any()).Return(newPayment, nil).AnyTimes()
 
 		// update balance
 		customer.Balance = customer.Balance + req.Amount
@@ -695,6 +704,7 @@ func Test_RefundPayment(t *testing.T) {
 		).AnyTimes()
 		streamSts.EXPECT().Recv().Return(&authpb.StatementResponse{}, nil).AnyTimes()
 		streamSts.EXPECT().CloseSend().Return(nil).AnyTimes()
+		mock.ExpectCommit()
 
 		st, err := servicePay.RefundPayment(context.Background(), req)
 		require.NoError(t, err)
@@ -707,7 +717,7 @@ func Test_RefundPayment(t *testing.T) {
 		storagePay := mockpay.NewMockStorage(ctrl)
 		clientAuth := mock_proto.NewMockAuthServiceClient(ctrl)
 
-		servicePay := NewPaymentService(storagePay, clientAuth)
+		servicePay := NewPaymentService(storagePay, clientAuth, db)
 
 		req := &paymentpb.PaidRequest{
 			PaymentId: uuid.New().String(),
@@ -729,6 +739,7 @@ func Test_RefundPayment(t *testing.T) {
 			CreatedAt:       time.Now(),
 		}
 
+		mock.ExpectBegin()
 		storagePay.EXPECT().GetPaymentByID(context.Background(), req).Return(refPayment, nil).AnyTimes()
 
 		reqIDC := &authpb.GetIDRequest{
@@ -779,7 +790,7 @@ func Test_RefundPayment(t *testing.T) {
 			).AnyTimes()
 
 		newPayment := types.CreateCompletePayment(req, refPayment, "Invalid amount")
-		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any()).Return(newPayment, nil).AnyTimes()
+		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any(), gomock.Any()).Return(newPayment, nil).AnyTimes()
 		sts := []*authpb.StatementRequest{}
 		sts = append(sts, &authpb.StatementRequest{
 			AccountId: merchant.Id,
@@ -791,6 +802,7 @@ func Test_RefundPayment(t *testing.T) {
 		streamSts.EXPECT().Send(gomock.Any()).Return(nil).AnyTimes()
 		streamSts.EXPECT().Recv().Return(&authpb.StatementResponse{}, nil).AnyTimes()
 		streamSts.EXPECT().CloseSend().Return(nil).AnyTimes()
+		mock.ExpectCommit()
 
 		st, err := servicePay.RefundPayment(context.Background(), req)
 		require.NoError(t, err)
@@ -806,7 +818,7 @@ func Test_CancelPayment(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	db, _, err := sqlmock.New()
+	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -814,7 +826,7 @@ func Test_CancelPayment(t *testing.T) {
 		storagePay := mockpay.NewMockStorage(ctrl)
 		clientAuth := mock_proto.NewMockAuthServiceClient(ctrl)
 
-		servicePay := NewPaymentService(storagePay, clientAuth)
+		servicePay := NewPaymentService(storagePay, clientAuth, db)
 
 		req := &paymentpb.PaidRequest{
 			PaymentId: uuid.New().String(),
@@ -836,6 +848,7 @@ func Test_CancelPayment(t *testing.T) {
 			CreatedAt:       time.Now(),
 		}
 
+		mock.ExpectBegin()
 		storagePay.EXPECT().GetPaymentByID(context.Background(), req).Return(refPayment, nil).AnyTimes()
 
 		reqIDC := &authpb.GetIDRequest{
@@ -886,12 +899,12 @@ func Test_CancelPayment(t *testing.T) {
 			).AnyTimes()
 
 		newPayment := types.CreateCompletePayment(req, refPayment, "Successful cancel")
-		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any()).Return(newPayment, nil).AnyTimes()
+		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any(), gomock.Any()).Return(newPayment, nil).AnyTimes()
 
 		// update balance
 		customer.Balance = customer.Balance + req.Amount
 		customer.BlockedMoney = customer.BlockedMoney - req.Amount
-		
+
 		merchant.BlockedMoney = merchant.BlockedMoney - req.Amount
 
 		clientAuth.EXPECT().UpdateBalance(gomock.Any(), gomock.Any()).DoAndReturn(
@@ -933,6 +946,8 @@ func Test_CancelPayment(t *testing.T) {
 		streamSts.EXPECT().Recv().Return(&authpb.StatementResponse{}, nil).AnyTimes()
 		streamSts.EXPECT().CloseSend().Return(nil).AnyTimes()
 
+		mock.ExpectCommit()
+
 		st, err := servicePay.CancelPayment(context.Background(), req)
 		require.NoError(t, err)
 		require.NotNil(t, st)
@@ -944,7 +959,7 @@ func Test_CancelPayment(t *testing.T) {
 		storagePay := mockpay.NewMockStorage(ctrl)
 		clientAuth := mock_proto.NewMockAuthServiceClient(ctrl)
 
-		servicePay := NewPaymentService(storagePay, clientAuth)
+		servicePay := NewPaymentService(storagePay, clientAuth, db)
 
 		req := &paymentpb.PaidRequest{
 			PaymentId: uuid.New().String(),
@@ -966,6 +981,7 @@ func Test_CancelPayment(t *testing.T) {
 			CreatedAt:       time.Now(),
 		}
 
+		mock.ExpectBegin()
 		storagePay.EXPECT().GetPaymentByID(context.Background(), req).Return(refPayment, nil).AnyTimes()
 
 		reqIDC := &authpb.GetIDRequest{
@@ -1016,7 +1032,7 @@ func Test_CancelPayment(t *testing.T) {
 			).AnyTimes()
 
 		newPayment := types.CreateCompletePayment(req, refPayment, "Invalid amount")
-		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any()).Return(newPayment, nil).AnyTimes()
+		storagePay.EXPECT().SavePayment(context.Background(), gomock.Any(), gomock.Any()).Return(newPayment, nil).AnyTimes()
 		sts := []*authpb.StatementRequest{}
 		sts = append(sts, &authpb.StatementRequest{
 			AccountId: merchant.Id,
@@ -1028,6 +1044,8 @@ func Test_CancelPayment(t *testing.T) {
 		streamSts.EXPECT().Send(gomock.Any()).Return(nil).AnyTimes()
 		streamSts.EXPECT().Recv().Return(&authpb.StatementResponse{}, nil).AnyTimes()
 		streamSts.EXPECT().CloseSend().Return(nil).AnyTimes()
+
+		mock.ExpectCommit()
 
 		st, err := servicePay.CancelPayment(context.Background(), req)
 		require.NoError(t, err)

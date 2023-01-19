@@ -6,6 +6,7 @@ package mock
 
 import (
 	context "context"
+	sql "database/sql"
 	reflect "reflect"
 
 	paymentpb "github.com/Edbeer/payment-grpc/proto"
@@ -36,6 +37,21 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 	return m.recorder
 }
 
+// BeginTx mocks base method.
+func (m *MockStorage) BeginTx(ctx context.Context) (*sql.Tx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BeginTx", ctx)
+	ret0, _ := ret[0].(*sql.Tx)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BeginTx indicates an expected call of BeginTx.
+func (mr *MockStorageMockRecorder) BeginTx(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginTx", reflect.TypeOf((*MockStorage)(nil).BeginTx), ctx)
+}
+
 // GetPaymentByID mocks base method.
 func (m *MockStorage) GetPaymentByID(ctx context.Context, req *paymentpb.PaidRequest) (*types.Payment, error) {
 	m.ctrl.T.Helper()
@@ -52,16 +68,16 @@ func (mr *MockStorageMockRecorder) GetPaymentByID(ctx, req interface{}) *gomock.
 }
 
 // SavePayment mocks base method.
-func (m *MockStorage) SavePayment(ctx context.Context, payment *types.Payment) (*types.Payment, error) {
+func (m *MockStorage) SavePayment(ctx context.Context, payment *types.Payment, tx *sql.Tx) (*types.Payment, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SavePayment", ctx, payment)
+	ret := m.ctrl.Call(m, "SavePayment", ctx, payment, tx)
 	ret0, _ := ret[0].(*types.Payment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SavePayment indicates an expected call of SavePayment.
-func (mr *MockStorageMockRecorder) SavePayment(ctx, payment interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) SavePayment(ctx, payment, tx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePayment", reflect.TypeOf((*MockStorage)(nil).SavePayment), ctx, payment)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePayment", reflect.TypeOf((*MockStorage)(nil).SavePayment), ctx, payment, tx)
 }
