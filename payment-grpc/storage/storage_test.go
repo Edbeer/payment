@@ -107,8 +107,8 @@ func Test_SavePayment(t *testing.T) {
 					payment.Status,
 					payment.Amount,
 					payment.CreatedAt,).WillReturnRows(rows)
-		mock.ExpectCommit()			
-		pay, err := psql.SavePayment(context.Background(), payment)
+		tx, _ := db.BeginTx(context.Background(), nil)
+		pay, err := psql.SavePayment(context.Background(), payment, tx)
 		require.NoError(t, err)
 		require.NotNil(t, pay)
 	})
