@@ -9,11 +9,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Edbeer/api-gateway/pkg/auth"
 	"github.com/gorilla/mux"
 )
 
 func main() {
 	router := mux.NewRouter()
+
+	auth.RegisterAuthRoutes(router)
 	// TODO CORS
 	server := &http.Server{
 		Addr:         ":3000",
@@ -22,7 +25,7 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
-
+	
 	log.Println("start")
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
