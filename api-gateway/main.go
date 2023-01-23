@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Edbeer/api-gateway/pkg/auth"
+	"github.com/Edbeer/api-gateway/pkg/payment"
 	"github.com/gorilla/mux"
 )
 
@@ -17,6 +18,7 @@ func main() {
 	router := mux.NewRouter()
 
 	auth.RegisterAuthRoutes(router)
+	payment.RegisterPaymentRouter(router)
 	// TODO CORS
 	server := &http.Server{
 		Addr:         ":3000",

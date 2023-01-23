@@ -5,10 +5,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/Edbeer/api-gateway/pkg/auth/utils"
+	"github.com/Edbeer/api-gateway/pkg/utils"
 	authpb "github.com/Edbeer/auth-grpc/proto"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 )
 
 type CreateRequest struct {
@@ -54,7 +53,7 @@ type UpdateRequest struct {
 }
 
 func UpdateAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
-	uuid, err := GetUUID(r)
+	uuid, err := utils.GetUUID(r)
 	if err != nil {
 		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
 	}
@@ -82,7 +81,7 @@ func UpdateAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthService
 }
 
 func DeleteAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
-	uuid, err := GetUUID(r)
+	uuid, err := utils.GetUUID(r)
 	if err != nil {
 		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
 	}
@@ -122,7 +121,7 @@ func DepositAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthServic
 }
 
 func GetAccountByID(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
-	uuid, err := GetUUID(r)
+	uuid, err := utils.GetUUID(r)
 	if err != nil {
 		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
 	}
@@ -185,7 +184,7 @@ func GetAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceCli
 }
 
 func GetStatement(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
-	uuid, err := GetUUID(r)
+	uuid, err := utils.GetUUID(r)
 	if err != nil {
 		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
 	}
@@ -212,13 +211,3 @@ func GetStatement(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceC
 	return utils.WriteJSON(w, http.StatusOK, statements)
 }
 
-// Get id from url
-func GetUUID(r *http.Request) (uuid.UUID, error) {
-	id := mux.Vars(r)["id"]
-	uid, err := uuid.Parse(id)
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	return uid, nil
-}

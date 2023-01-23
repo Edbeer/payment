@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/Edbeer/api-gateway/pkg/auth/routes"
-	"github.com/Edbeer/api-gateway/pkg/auth/utils"
+	"github.com/Edbeer/api-gateway/pkg/utils"
 	"github.com/gorilla/mux"
 )
 
@@ -14,19 +14,19 @@ func RegisterAuthRoutes(router *mux.Router) *AuthClient {
 	}
 	// POST
 	postRouter := router.Methods(http.MethodPost).Subrouter()
-	postRouter.HandleFunc("/account", HTTPHandler(client.CreateAccount))
-	postRouter.HandleFunc("/account/deposit", HTTPHandler(client.DepositAccount))
+	postRouter.HandleFunc("/account", utils.HTTPHandler(client.CreateAccount))
+	postRouter.HandleFunc("/account/deposit", utils.HTTPHandler(client.DepositAccount))
 	// GET
 	getRouter := router.Methods(http.MethodGet).Subrouter()
-	getRouter.HandleFunc("/account", HTTPHandler(client.GetAccount))
-	getRouter.HandleFunc("/account/{id}", HTTPHandler(client.GetAccountByID))
-	getRouter.HandleFunc("/account/statement/{id}", HTTPHandler(client.GetStatement))
+	getRouter.HandleFunc("/account", utils.HTTPHandler(client.GetAccount))
+	getRouter.HandleFunc("/account/{id}", utils.HTTPHandler(client.GetAccountByID))
+	getRouter.HandleFunc("/account/statement/{id}", utils.HTTPHandler(client.GetStatement))
 	// PUT
 	putRouter := router.Methods(http.MethodPut).Subrouter()
-	putRouter.HandleFunc("/account/{id}", HTTPHandler(client.UpdateAccount))
+	putRouter.HandleFunc("/account/{id}", utils.HTTPHandler(client.UpdateAccount))
 	// DELETE
 	deleteRouter := router.Methods(http.MethodDelete).Subrouter()
-	deleteRouter.HandleFunc("/account/{id}", HTTPHandler(client.DeleteAccount))
+	deleteRouter.HandleFunc("/account/{id}", utils.HTTPHandler(client.DeleteAccount))
 	return client
 }
 
@@ -63,15 +63,4 @@ func (s *AuthClient) UpdateAccount(w http.ResponseWriter, r *http.Request) error
 // Delete Account
 func (s *AuthClient) DeleteAccount(w http.ResponseWriter, r *http.Request) error {
 	return routes.DeleteAccount(w, r, s.client)
-}
-
-type ApiFunc func(w http.ResponseWriter, r *http.Request) error
-
-// Wrapper for handler func
-func HTTPHandler(f ApiFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := f(w, r); err != nil {
-			utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
-		}
-	}
 }
