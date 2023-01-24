@@ -4,7 +4,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/Edbeer/auth-grpc/pkg/db"
+	"github.com/Edbeer/auth-grpc/pkg/db/psql"
 	authpb "github.com/Edbeer/auth-grpc/proto"
 	"github.com/Edbeer/auth-grpc/service"
 	"github.com/Edbeer/auth-grpc/storage"
@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	db, err := db.NewPostgresDB()
+	db, err := postgres.NewPostgresDB()
 	if err != nil {
 		log.Fatal(err)
 	}
