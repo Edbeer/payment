@@ -44,7 +44,7 @@ func NewAuthService(storage Storage, redisStorage RedisStorage) *AuthService {
 	}
 }
 
-func (s *AuthService) CreateAccount(ctx context.Context, req *authpb.CreateRequest) (*authpb.AccountWithToken, error) {
+func (s *AuthService) CreateAccount(ctx context.Context, req *authpb.CreateRequest) (*authpb.AccountWithTokens, error) {
 	accReq := &authpb.CreateRequest{
 		FirstName:        req.FirstName,
 		LastName:         req.LastName,
@@ -59,17 +59,20 @@ func (s *AuthService) CreateAccount(ctx context.Context, req *authpb.CreateReque
 		return nil, err
 	}
 
-	token, err := utils.CreateJWT(account)
+	accessToken, err := utils.CreateJWT(account)
 	if err != nil {
 		return nil, err
 	}
 
 	// refreshToken
-	_, err = s.redisStorage.CreateSession(ctx, &types.Session{
+	refreshToken, err := s.redisStorage.CreateSession(ctx, &types.Session{
 		UserID: account.ID,
 	}, 86400)
+	if err != nil {
+		return nil, err
+	}
 
-	return accAndTokenToProto(account, token), nil
+	return accAndTokenToProto(account, accessToken, refreshToken), nil
 }
 
 func (s *AuthService) GetAccount(req *authpb.GetRequest, stream authpb.AuthService_GetAccountServer) error {
@@ -180,6 +183,72 @@ func (s *AuthService) GetStatement(req *authpb.StatementGet, stream authpb.AuthS
 	return nil
 }
 
+func (s *AuthService) SignIn(ctx context.Context, req *authpb.LoginRequest) (*authpb.AccountWithTokens, error) {
+	account, err := s.storage.GetAccountByID(ctx, &authpb.GetIDRequest{
+		Id: req.Id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken, err := utils.CreateJWT(account)
+	if err != nil {
+		return nil, err
+	}
+
+	// refreshToken
+	refreshToken, err := s.redisStorage.CreateSession(ctx, &types.Session{
+		UserID: account.ID,
+	}, 86400)
+	if err != nil {
+		return nil, err
+	}
+
+	return accAndTokenToProto(account, accessToken, refreshToken), nil
+}
+
+func (s *AuthService) SignOut(ctx context.Context, req *authpb.QuitRequest) (*authpb.QuitResponse, error) {
+	err := s.redisStorage.DeleteSession(ctx, req.RefreshToken)
+	if err != nil {
+		return nil, err
+	}	
+	return &authpb.QuitResponse{
+		Message: "sign-out",
+	}, err	
+}
+
+func (s *AuthService) RefreshTokens(ctx context.Context, req *authpb.RefreshRequest) (*authpb.Tokens, error) {
+	uid, err := s.redisStorage.GetUserID(ctx, req.RefreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	account, err := s.storage.GetAccountByID(ctx, &authpb.GetIDRequest{
+		Id: uid.String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// jwt-token
+	tokenString, err := utils.CreateJWT(account)
+	if err != nil {
+		return nil, err
+	}
+	// refreshToken
+	refreshToken, err := s.redisStorage.CreateSession(ctx, &types.Session{
+		UserID: account.ID,
+	}, 86400)
+	if err != nil {
+		return nil, err
+	}
+
+	return &authpb.Tokens{
+		AccessToken:  tokenString,
+		RefreshToken: refreshToken,
+	}, nil
+}
+
 func accountToProto(acc *types.Account) *authpb.Account {
 	return &authpb.Account{
 		Id:               acc.ID.String(),
@@ -195,8 +264,8 @@ func accountToProto(acc *types.Account) *authpb.Account {
 	}
 }
 
-func accAndTokenToProto(acc *types.Account, token string) *authpb.AccountWithToken {
-	return &authpb.AccountWithToken{
+func accAndTokenToProto(acc *types.Account, accessToken, refreshToken string) *authpb.AccountWithTokens {
+	return &authpb.AccountWithTokens{
 		Account: &authpb.Account{
 			Id:               acc.ID.String(),
 			FirstName:        acc.FirstName,
@@ -209,6 +278,7 @@ func accAndTokenToProto(acc *types.Account, token string) *authpb.AccountWithTok
 			BlockedMoney:     acc.BlockedMoney,
 			CreatedAt:        timestamppb.New(acc.CreatedAt),
 		},
-		Token: token,
+		AccessToken: accessToken,
+		RefreshToken: refreshToken,
 	}
 }

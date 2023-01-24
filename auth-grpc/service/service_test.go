@@ -398,3 +398,128 @@ func Test_GetStatement(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, err)
 }
+
+func Test_RefreshTokens(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	db, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	mockStorage := mockstore.NewMockStorage(ctrl)
+	mockRedis := mockstore.NewMockRedisStorage(ctrl)
+
+	mockService := NewAuthService(mockStorage, mockRedis)
+
+	req := &authpb.RefreshRequest{
+		RefreshToken: "cookieValue",
+	}
+
+	uid := uuid.New()
+	mockRedis.EXPECT().GetUserID(context.Background(), req.RefreshToken).Return(uid, nil).AnyTimes()
+
+	account := &types.Account{
+		ID:               uid,
+		FirstName:        "Pasha1",
+		LastName:         "volkov1",
+		CardNumber:       "4444444444444444",
+		CardExpiryMonth:  "12",
+		CardExpiryYear:   "24",
+		CardSecurityCode: "924",
+		Balance:          0,
+		BlockedMoney:     0,
+		Statement:        []string{},
+		CreatedAt:        time.Now(),
+	}
+
+	mockStorage.EXPECT().GetAccountByID(context.Background(), gomock.Any()).Return(account, nil).AnyTimes()
+
+	token := "refresh-token"
+	sess := &types.Session{
+		UserID: uid,
+	}
+	mockRedis.EXPECT().CreateSession(context.Background(), gomock.Eq(sess), 86400).Return(token, nil).AnyTimes()
+
+
+	tokens, err := mockService.RefreshTokens(context.Background(), req)
+	require.NoError(t, err)
+	require.Nil(t, err)
+	require.NotNil(t, tokens)
+}
+
+func Test_SignIn(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	db, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	mockStorage := mockstore.NewMockStorage(ctrl)
+	mockRedis := mockstore.NewMockRedisStorage(ctrl)
+
+	mockService := NewAuthService(mockStorage, mockRedis)
+	uid := uuid.New()
+
+	req := &authpb.LoginRequest{
+		Id: uid.String(),
+	}
+
+	account := &types.Account{
+		ID:               uid,
+		FirstName:        "Pasha1",
+		LastName:         "volkov1",
+		CardNumber:       "4444444444444444",
+		CardExpiryMonth:  "12",
+		CardExpiryYear:   "24",
+		CardSecurityCode: "924",
+		Balance:          0,
+		BlockedMoney:     0,
+		Statement:        []string{},
+		CreatedAt:        time.Now(),
+	}
+
+	mockStorage.EXPECT().GetAccountByID(context.Background(), gomock.Any()).Return(account, nil).AnyTimes()
+	sess := &types.Session{
+		UserID: uid,
+	}
+	token := "refresh-token"
+	mockRedis.EXPECT().CreateSession(context.Background(), gomock.Eq(sess), 86400).Return(token, nil).AnyTimes()
+
+	accWithTokens, err := mockService.SignIn(context.Background(), req)
+	require.NoError(t, err)
+	require.Nil(t, err)
+	require.NotNil(t, accWithTokens)
+}
+
+func Test_SignOut(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	db, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	mockStorage := mockstore.NewMockStorage(ctrl)
+	mockRedis := mockstore.NewMockRedisStorage(ctrl)
+
+	mockService := NewAuthService(mockStorage, mockRedis)
+
+	cookieValue := "cookieValue"
+
+	mockRedis.EXPECT().DeleteSession(context.Background(), gomock.Eq(cookieValue)).Return(nil).AnyTimes()
+
+	message, err := mockService.SignOut(context.Background(), &authpb.QuitRequest{
+		RefreshToken: cookieValue,
+	})
+	require.NoError(t, err)
+	require.Nil(t, err)
+	require.Equal(t, message.Message, "sign-out")
+}

@@ -22,7 +22,10 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthServiceClient interface {
-	CreateAccount(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*AccountWithToken, error)
+	CreateAccount(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*AccountWithTokens, error)
+	SignIn(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*AccountWithTokens, error)
+	SignOut(ctx context.Context, in *QuitRequest, opts ...grpc.CallOption) (*QuitResponse, error)
+	RefreshTokens(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*Tokens, error)
 	GetAccount(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (AuthService_GetAccountClient, error)
 	UpdateAccount(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*Account, error)
 	DeleteAccount(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
@@ -42,9 +45,36 @@ func NewAuthServiceClient(cc grpc.ClientConnInterface) AuthServiceClient {
 	return &authServiceClient{cc}
 }
 
-func (c *authServiceClient) CreateAccount(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*AccountWithToken, error) {
-	out := new(AccountWithToken)
+func (c *authServiceClient) CreateAccount(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*AccountWithTokens, error) {
+	out := new(AccountWithTokens)
 	err := c.cc.Invoke(ctx, "/auth.AuthService/CreateAccount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) SignIn(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*AccountWithTokens, error) {
+	out := new(AccountWithTokens)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/SignIn", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) SignOut(ctx context.Context, in *QuitRequest, opts ...grpc.CallOption) (*QuitResponse, error) {
+	out := new(QuitResponse)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/SignOut", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) RefreshTokens(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*Tokens, error) {
+	out := new(Tokens)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/RefreshTokens", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +225,10 @@ func (c *authServiceClient) UpdateBalance(ctx context.Context, in *UpdateBalance
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility
 type AuthServiceServer interface {
-	CreateAccount(context.Context, *CreateRequest) (*AccountWithToken, error)
+	CreateAccount(context.Context, *CreateRequest) (*AccountWithTokens, error)
+	SignIn(context.Context, *LoginRequest) (*AccountWithTokens, error)
+	SignOut(context.Context, *QuitRequest) (*QuitResponse, error)
+	RefreshTokens(context.Context, *RefreshRequest) (*Tokens, error)
 	GetAccount(*GetRequest, AuthService_GetAccountServer) error
 	UpdateAccount(context.Context, *UpdateRequest) (*Account, error)
 	DeleteAccount(context.Context, *DeleteRequest) (*DeleteResponse, error)
@@ -212,8 +245,17 @@ type AuthServiceServer interface {
 type UnimplementedAuthServiceServer struct {
 }
 
-func (UnimplementedAuthServiceServer) CreateAccount(context.Context, *CreateRequest) (*AccountWithToken, error) {
+func (UnimplementedAuthServiceServer) CreateAccount(context.Context, *CreateRequest) (*AccountWithTokens, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateAccount not implemented")
+}
+func (UnimplementedAuthServiceServer) SignIn(context.Context, *LoginRequest) (*AccountWithTokens, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SignIn not implemented")
+}
+func (UnimplementedAuthServiceServer) SignOut(context.Context, *QuitRequest) (*QuitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SignOut not implemented")
+}
+func (UnimplementedAuthServiceServer) RefreshTokens(context.Context, *RefreshRequest) (*Tokens, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RefreshTokens not implemented")
 }
 func (UnimplementedAuthServiceServer) GetAccount(*GetRequest, AuthService_GetAccountServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetAccount not implemented")
@@ -266,6 +308,60 @@ func _AuthService_CreateAccount_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthServiceServer).CreateAccount(ctx, req.(*CreateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_SignIn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).SignIn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/SignIn",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).SignIn(ctx, req.(*LoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_SignOut_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).SignOut(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/SignOut",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).SignOut(ctx, req.(*QuitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_RefreshTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefreshRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).RefreshTokens(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/RefreshTokens",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).RefreshTokens(ctx, req.(*RefreshRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -438,6 +534,18 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateAccount",
 			Handler:    _AuthService_CreateAccount_Handler,
+		},
+		{
+			MethodName: "SignIn",
+			Handler:    _AuthService_SignIn_Handler,
+		},
+		{
+			MethodName: "SignOut",
+			Handler:    _AuthService_SignOut_Handler,
+		},
+		{
+			MethodName: "RefreshTokens",
+			Handler:    _AuthService_RefreshTokens_Handler,
 		},
 		{
 			MethodName: "UpdateAccount",

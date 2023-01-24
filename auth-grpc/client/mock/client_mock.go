@@ -37,14 +37,14 @@ func (m *MockAuthServiceClient) EXPECT() *MockAuthServiceClientMockRecorder {
 }
 
 // CreateAccount mocks base method.
-func (m *MockAuthServiceClient) CreateAccount(arg0 context.Context, arg1 *authpb.CreateRequest, arg2 ...grpc.CallOption) (*authpb.AccountWithToken, error) {
+func (m *MockAuthServiceClient) CreateAccount(arg0 context.Context, arg1 *authpb.CreateRequest, arg2 ...grpc.CallOption) (*authpb.AccountWithTokens, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "CreateAccount", varargs...)
-	ret0, _ := ret[0].(*authpb.AccountWithToken)
+	ret0, _ := ret[0].(*authpb.AccountWithTokens)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -174,6 +174,66 @@ func (mr *MockAuthServiceClientMockRecorder) GetStatement(arg0, arg1 interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStatement", reflect.TypeOf((*MockAuthServiceClient)(nil).GetStatement), varargs...)
+}
+
+// RefreshTokens mocks base method.
+func (m *MockAuthServiceClient) RefreshTokens(arg0 context.Context, arg1 *authpb.RefreshRequest, arg2 ...grpc.CallOption) (*authpb.Tokens, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RefreshTokens", varargs...)
+	ret0, _ := ret[0].(*authpb.Tokens)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RefreshTokens indicates an expected call of RefreshTokens.
+func (mr *MockAuthServiceClientMockRecorder) RefreshTokens(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshTokens", reflect.TypeOf((*MockAuthServiceClient)(nil).RefreshTokens), varargs...)
+}
+
+// SignIn mocks base method.
+func (m *MockAuthServiceClient) SignIn(arg0 context.Context, arg1 *authpb.LoginRequest, arg2 ...grpc.CallOption) (*authpb.AccountWithTokens, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SignIn", varargs...)
+	ret0, _ := ret[0].(*authpb.AccountWithTokens)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SignIn indicates an expected call of SignIn.
+func (mr *MockAuthServiceClientMockRecorder) SignIn(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignIn", reflect.TypeOf((*MockAuthServiceClient)(nil).SignIn), varargs...)
+}
+
+// SignOut mocks base method.
+func (m *MockAuthServiceClient) SignOut(arg0 context.Context, arg1 *authpb.QuitRequest, arg2 ...grpc.CallOption) (*authpb.QuitResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SignOut", varargs...)
+	ret0, _ := ret[0].(*authpb.QuitResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SignOut indicates an expected call of SignOut.
+func (mr *MockAuthServiceClientMockRecorder) SignOut(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignOut", reflect.TypeOf((*MockAuthServiceClient)(nil).SignOut), varargs...)
 }
 
 // UpdateAccount mocks base method.

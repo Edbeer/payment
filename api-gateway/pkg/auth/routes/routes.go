@@ -36,10 +36,113 @@ func CreateAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthService
 	if err != nil {
 		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
 	}
-	w.Header().Add("x-jwt-token", accountWithToken.Token)
-	// TODO Cookie
+	w.Header().Add("x-jwt-token", accountWithToken.AccessToken)
+	// cookie
+	cookie := &http.Cookie{
+		Name:       "refresh-token",
+		Value:      accountWithToken.RefreshToken,
+		Path:       "/",
+		RawExpires: "",
+		MaxAge:     86400,
+		Secure:     false,
+		HttpOnly:   true,
+		SameSite:   0,
+	}
+	http.SetCookie(w, cookie)
 
 	return utils.WriteJSON(w, http.StatusOK, accountWithToken.Account)
+}
+
+type RefreshRequest struct {
+	RefreshRequest string `json:"refresh_token"`
+}
+
+type Tokens struct {
+	RefreshRequest string `json:"refresh_token"`
+	AccessToken    string `json:"access_token"`
+}
+
+func RefreshTokens(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
+	req := &RefreshRequest{}
+
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
+	}
+
+	tokens, err := cc.RefreshTokens(r.Context(), &authpb.RefreshRequest{
+		RefreshToken: req.RefreshRequest,
+	})
+	if err != nil {
+		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
+	}
+
+	w.Header().Add("x-jwt-token", tokens.AccessToken)
+	// cookie
+	cookie := &http.Cookie{
+		Name:       "refresh-token",
+		Value:      tokens.RefreshToken,
+		Path:       "/",
+		RawExpires: "",
+		MaxAge:     86400,
+		Secure:     false,
+		HttpOnly:   true,
+		SameSite:   0,
+	}
+	http.SetCookie(w, cookie)
+
+	return utils.WriteJSON(w, http.StatusOK, &Tokens{
+		RefreshRequest: tokens.RefreshToken,
+		AccessToken:    tokens.AccessToken,
+	})
+}
+
+type LoginRequest struct {
+	Id string `json:"id"`
+}
+
+func SignIn(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
+	req := &LoginRequest{}
+
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
+	}
+
+	accountWithToken, err := cc.SignIn(r.Context(), &authpb.LoginRequest{
+		Id: req.Id,
+	})
+	if err != nil {
+		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
+	}
+	w.Header().Add("x-jwt-token", accountWithToken.AccessToken)
+	// cookie
+	cookie := &http.Cookie{
+		Name:       "refresh-token",
+		Value:      accountWithToken.RefreshToken,
+		Path:       "/",
+		RawExpires: "",
+		MaxAge:     86400,
+		Secure:     false,
+		HttpOnly:   true,
+		SameSite:   0,
+	}
+	http.SetCookie(w, cookie)
+
+	return utils.WriteJSON(w, http.StatusOK, accountWithToken.Account)
+}
+
+func SignOut(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
+	cookie, err := r.Cookie("refresh-token")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: "Cookie doesn't exist"})
+		}
+		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
+	}
+	message, err := cc.SignOut(r.Context(), &authpb.QuitRequest{
+		RefreshToken: cookie.Value,
+	})
+
+	return utils.WriteJSON(w, http.StatusOK, message.Message)
 }
 
 type UpdateRequest struct {
@@ -56,7 +159,7 @@ func UpdateAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthService
 	if err != nil {
 		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
 	}
-	
+
 	req := &UpdateRequest{}
 
 	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
@@ -209,4 +312,3 @@ func GetStatement(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceC
 
 	return utils.WriteJSON(w, http.StatusOK, statements)
 }
-
