@@ -19,14 +19,14 @@ func RegisterAuthRoutes(router *mux.Router) *AuthClient {
 	// GET
 	getRouter := router.Methods(http.MethodGet).Subrouter()
 	getRouter.HandleFunc("/account", utils.HTTPHandler(client.GetAccount))
-	getRouter.HandleFunc("/account/{id}", utils.HTTPHandler(client.GetAccountByID))
-	getRouter.HandleFunc("/account/statement/{id}", utils.HTTPHandler(client.GetStatement))
+	getRouter.HandleFunc("/account/{id}", AuthJWT(utils.HTTPHandler(client.GetAccountByID)))
+	getRouter.HandleFunc("/account/statement/{id}", AuthJWT(utils.HTTPHandler(client.GetStatement)))
 	// PUT
 	putRouter := router.Methods(http.MethodPut).Subrouter()
-	putRouter.HandleFunc("/account/{id}", utils.HTTPHandler(client.UpdateAccount))
+	putRouter.HandleFunc("/account/{id}", AuthJWT(utils.HTTPHandler(client.UpdateAccount)))
 	// DELETE
 	deleteRouter := router.Methods(http.MethodDelete).Subrouter()
-	deleteRouter.HandleFunc("/account/{id}", utils.HTTPHandler(client.DeleteAccount))
+	deleteRouter.HandleFunc("/account/{id}", AuthJWT(utils.HTTPHandler(client.DeleteAccount)))
 	return client
 }
 

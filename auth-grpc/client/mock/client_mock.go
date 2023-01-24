@@ -37,14 +37,14 @@ func (m *MockAuthServiceClient) EXPECT() *MockAuthServiceClientMockRecorder {
 }
 
 // CreateAccount mocks base method.
-func (m *MockAuthServiceClient) CreateAccount(arg0 context.Context, arg1 *authpb.CreateRequest, arg2 ...grpc.CallOption) (*authpb.Account, error) {
+func (m *MockAuthServiceClient) CreateAccount(arg0 context.Context, arg1 *authpb.CreateRequest, arg2 ...grpc.CallOption) (*authpb.AccountWithToken, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "CreateAccount", varargs...)
-	ret0, _ := ret[0].(*authpb.Account)
+	ret0, _ := ret[0].(*authpb.AccountWithToken)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

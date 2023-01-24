@@ -7,7 +7,7 @@ option go_package = "github.com/Edbeer/auth-grpc/proto;authpb";
 import "google/protobuf/timestamp.proto";
 
 service AuthService {
-    rpc CreateAccount(CreateRequest) returns (Account) {};
+    rpc CreateAccount(CreateRequest) returns (AccountWithToken) {};
     rpc GetAccount(GetRequest) returns (stream Account) {};
     rpc UpdateAccount(UpdateRequest) returns (Account) {};
     rpc DeleteAccount(DeleteRequest) returns (DeleteResponse) {};
@@ -94,6 +94,11 @@ message Account {
     uint64 blocked_money = 9;
     repeated string statement  = 10;
     google.protobuf.Timestamp created_at = 11;
+}
+
+message AccountWithToken {
+    Account account = 1;
+    string token = 2;
 }
 
 message Statement {

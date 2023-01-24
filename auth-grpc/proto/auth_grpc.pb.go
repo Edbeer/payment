@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthServiceClient interface {
-	CreateAccount(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*Account, error)
+	CreateAccount(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*AccountWithToken, error)
 	GetAccount(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (AuthService_GetAccountClient, error)
 	UpdateAccount(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*Account, error)
 	DeleteAccount(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
@@ -42,8 +42,8 @@ func NewAuthServiceClient(cc grpc.ClientConnInterface) AuthServiceClient {
 	return &authServiceClient{cc}
 }
 
-func (c *authServiceClient) CreateAccount(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*Account, error) {
-	out := new(Account)
+func (c *authServiceClient) CreateAccount(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*AccountWithToken, error) {
+	out := new(AccountWithToken)
 	err := c.cc.Invoke(ctx, "/auth.AuthService/CreateAccount", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -195,7 +195,7 @@ func (c *authServiceClient) UpdateBalance(ctx context.Context, in *UpdateBalance
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility
 type AuthServiceServer interface {
-	CreateAccount(context.Context, *CreateRequest) (*Account, error)
+	CreateAccount(context.Context, *CreateRequest) (*AccountWithToken, error)
 	GetAccount(*GetRequest, AuthService_GetAccountServer) error
 	UpdateAccount(context.Context, *UpdateRequest) (*Account, error)
 	DeleteAccount(context.Context, *DeleteRequest) (*DeleteResponse, error)
@@ -212,7 +212,7 @@ type AuthServiceServer interface {
 type UnimplementedAuthServiceServer struct {
 }
 
-func (UnimplementedAuthServiceServer) CreateAccount(context.Context, *CreateRequest) (*Account, error) {
+func (UnimplementedAuthServiceServer) CreateAccount(context.Context, *CreateRequest) (*AccountWithToken, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateAccount not implemented")
 }
 func (UnimplementedAuthServiceServer) GetAccount(*GetRequest, AuthService_GetAccountServer) error {

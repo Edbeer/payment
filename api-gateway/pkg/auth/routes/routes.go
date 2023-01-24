@@ -7,7 +7,6 @@ import (
 
 	"github.com/Edbeer/api-gateway/pkg/utils"
 	authpb "github.com/Edbeer/auth-grpc/proto"
-	"github.com/google/uuid"
 )
 
 type CreateRequest struct {
@@ -26,7 +25,7 @@ func CreateAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthService
 		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
 	}
 
-	account, err := cc.CreateAccount(r.Context(), &authpb.CreateRequest{
+	accountWithToken, err := cc.CreateAccount(r.Context(), &authpb.CreateRequest{
 		FirstName:        req.FirstName,
 		LastName:         req.LastName,
 		CardNumber:       req.CardNumber,
@@ -37,10 +36,10 @@ func CreateAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthService
 	if err != nil {
 		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
 	}
-
+	w.Header().Add("x-jwt-token", accountWithToken.Token)
 	// TODO Cookie
 
-	return utils.WriteJSON(w, http.StatusOK, account)
+	return utils.WriteJSON(w, http.StatusOK, accountWithToken.Account)
 }
 
 type UpdateRequest struct {
@@ -136,31 +135,31 @@ func GetAccountByID(w http.ResponseWriter, r *http.Request, cc authpb.AuthServic
 	return utils.WriteJSON(w, http.StatusOK, account)
 }
 
-type UpdateBalanceRequest struct {
-	Id           uuid.UUID `json:"id"`
-	Balance      uint64    `json:"balance"`
-	BlockedMoney uint64    `json:"blocked_money"`
-}
+// type UpdateBalanceRequest struct {
+// 	Id           uuid.UUID `json:"id"`
+// 	Balance      uint64    `json:"balance"`
+// 	BlockedMoney uint64    `json:"blocked_money"`
+// }
 
-// TODO remove
-func UpdateBalance(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
-	req := &UpdateBalanceRequest{}
+// // TODO remove
+// func UpdateBalance(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
+// 	req := &UpdateBalanceRequest{}
 
-	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
-	}
+// 	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+// 		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
+// 	}
 
-	account, err := cc.UpdateBalance(r.Context(), &authpb.UpdateBalanceRequest{
-		Id:           req.Id.String(),
-		Balance:      req.Balance,
-		BlockedMoney: req.BlockedMoney,
-	})
-	if err != nil {
-		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
-	}
+// 	account, err := cc.UpdateBalance(r.Context(), &authpb.UpdateBalanceRequest{
+// 		Id:           req.Id.String(),
+// 		Balance:      req.Balance,
+// 		BlockedMoney: req.BlockedMoney,
+// 	})
+// 	if err != nil {
+// 		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
+// 	}
 
-	return utils.WriteJSON(w, http.StatusOK, account)
-}
+// 	return utils.WriteJSON(w, http.StatusOK, account)
+// }
 
 func GetAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
 	stream, err := cc.GetAccount(r.Context(), &authpb.GetRequest{})

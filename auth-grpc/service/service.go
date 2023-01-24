@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 
+	"github.com/Edbeer/auth-grpc/pkg/utils"
 	authpb "github.com/Edbeer/auth-grpc/proto"
 	"github.com/Edbeer/auth-grpc/types"
 	"google.golang.org/grpc/codes"
@@ -34,7 +35,7 @@ func NewAuthService(storage Storage) *AuthService {
 	}
 }
 
-func (s *AuthService) CreateAccount(ctx context.Context, req *authpb.CreateRequest) (*authpb.Account, error) {
+func (s *AuthService) CreateAccount(ctx context.Context, req *authpb.CreateRequest) (*authpb.AccountWithToken, error) {
 	accReq := &authpb.CreateRequest{
 		FirstName:        req.FirstName,
 		LastName:         req.LastName,
@@ -49,7 +50,12 @@ func (s *AuthService) CreateAccount(ctx context.Context, req *authpb.CreateReque
 		return nil, err
 	}
 
-	return accountToProto(account), nil
+	token, err := utils.CreateJWT(account)
+	if err != nil {
+		return nil, err
+	}
+
+	return accAndTokenToProto(account, token), nil
 }
 
 func (s *AuthService) GetAccount(req *authpb.GetRequest, stream authpb.AuthService_GetAccountServer) error {
@@ -172,5 +178,23 @@ func accountToProto(acc *types.Account) *authpb.Account {
 		Balance:          acc.Balance,
 		BlockedMoney:     acc.BlockedMoney,
 		CreatedAt:        timestamppb.New(acc.CreatedAt),
+	}
+}
+
+func accAndTokenToProto(acc *types.Account, token string) *authpb.AccountWithToken {
+	return &authpb.AccountWithToken{
+		Account: &authpb.Account{
+			Id:               acc.ID.String(),
+			FirstName:        acc.FirstName,
+			LastName:         acc.LastName,
+			CardNumber:       acc.CardNumber,
+			CardExpiryMonth:  acc.CardExpiryMonth,
+			CardExpiryYear:   acc.CardExpiryYear,
+			CardSecurityCode: acc.CardSecurityCode,
+			Balance:          acc.Balance,
+			BlockedMoney:     acc.BlockedMoney,
+			CreatedAt:        timestamppb.New(acc.CreatedAt),
+		},
+		Token: token,
 	}
 }
