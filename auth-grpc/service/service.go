@@ -8,6 +8,7 @@ import (
 	"github.com/Edbeer/auth-grpc/pkg/utils"
 	authpb "github.com/Edbeer/auth-grpc/proto"
 	"github.com/Edbeer/auth-grpc/types"
+	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -24,14 +25,22 @@ type Storage interface {
 	UpdateStatement(ctx context.Context, req *authpb.StatementRequest) ([]string, error)
 }
 
-type AuthService struct {
-	authpb.UnimplementedAuthServiceServer
-	storage Storage
+type RedisStorage interface {
+	CreateSession(ctx context.Context, session *types.Session, expire int) (string, error)
+	GetUserID(ctx context.Context, refreshToken string) (uuid.UUID, error)
+	DeleteSession(ctx context.Context, refreshToken string) error
 }
 
-func NewAuthService(storage Storage) *AuthService {
+type AuthService struct {
+	authpb.UnimplementedAuthServiceServer
+	redisStorage RedisStorage
+	storage      Storage
+}
+
+func NewAuthService(storage Storage, redisStorage RedisStorage) *AuthService {
 	return &AuthService{
-		storage: storage,
+		storage:      storage,
+		redisStorage: redisStorage,
 	}
 }
 
@@ -54,6 +63,11 @@ func (s *AuthService) CreateAccount(ctx context.Context, req *authpb.CreateReque
 	if err != nil {
 		return nil, err
 	}
+
+	// refreshToken
+	_, err = s.redisStorage.CreateSession(ctx, &types.Session{
+		UserID: account.ID,
+	}, 86400)
 
 	return accAndTokenToProto(account, token), nil
 }

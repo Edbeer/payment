@@ -38,3 +38,8 @@ func NewAccount(req *authpb.CreateRequest) *Account {
 	}
 }
 
+// Session model
+type Session struct {
+	RefreshToken string    `json:"refresh_token" redis:"refresh_token"`
+	UserID       uuid.UUID `json:"id" redis:"id"`
+}

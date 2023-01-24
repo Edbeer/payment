@@ -11,6 +11,7 @@ import (
 	authpb "github.com/Edbeer/auth-grpc/proto"
 	types "github.com/Edbeer/auth-grpc/types"
 	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
 )
 
 // MockStorage is a mock of Storage interface.
@@ -154,4 +155,71 @@ func (m *MockStorage) UpdateStatement(ctx context.Context, req *authpb.Statement
 func (mr *MockStorageMockRecorder) UpdateStatement(ctx, req interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatement", reflect.TypeOf((*MockStorage)(nil).UpdateStatement), ctx, req)
+}
+
+// MockRedisStorage is a mock of RedisStorage interface.
+type MockRedisStorage struct {
+	ctrl     *gomock.Controller
+	recorder *MockRedisStorageMockRecorder
+}
+
+// MockRedisStorageMockRecorder is the mock recorder for MockRedisStorage.
+type MockRedisStorageMockRecorder struct {
+	mock *MockRedisStorage
+}
+
+// NewMockRedisStorage creates a new mock instance.
+func NewMockRedisStorage(ctrl *gomock.Controller) *MockRedisStorage {
+	mock := &MockRedisStorage{ctrl: ctrl}
+	mock.recorder = &MockRedisStorageMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockRedisStorage) EXPECT() *MockRedisStorageMockRecorder {
+	return m.recorder
+}
+
+// CreateSession mocks base method.
+func (m *MockRedisStorage) CreateSession(ctx context.Context, session *types.Session, expire int) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSession", ctx, session, expire)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSession indicates an expected call of CreateSession.
+func (mr *MockRedisStorageMockRecorder) CreateSession(ctx, session, expire interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSession", reflect.TypeOf((*MockRedisStorage)(nil).CreateSession), ctx, session, expire)
+}
+
+// DeleteSession mocks base method.
+func (m *MockRedisStorage) DeleteSession(ctx context.Context, refreshToken string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSession", ctx, refreshToken)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSession indicates an expected call of DeleteSession.
+func (mr *MockRedisStorageMockRecorder) DeleteSession(ctx, refreshToken interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSession", reflect.TypeOf((*MockRedisStorage)(nil).DeleteSession), ctx, refreshToken)
+}
+
+// GetUserID mocks base method.
+func (m *MockRedisStorage) GetUserID(ctx context.Context, refreshToken string) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserID", ctx, refreshToken)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserID indicates an expected call of GetUserID.
+func (mr *MockRedisStorageMockRecorder) GetUserID(ctx, refreshToken interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserID", reflect.TypeOf((*MockRedisStorage)(nil).GetUserID), ctx, refreshToken)
 }
