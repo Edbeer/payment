@@ -12,6 +12,7 @@ import (
 	"github.com/Edbeer/api-gateway/pkg/auth"
 	"github.com/Edbeer/api-gateway/pkg/payment"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/handlers"
 )
 
 func main() {
@@ -19,10 +20,12 @@ func main() {
 
 	auth.RegisterAuthRoutes(router)
 	payment.RegisterPaymentRouter(router)
-	// TODO CORS
+	
+	// in development mode, there will be "*"
+	ch := handlers.CORS(handlers.AllowedOrigins([]string{"*"}))
 	server := &http.Server{
 		Addr:         ":3000",
-		Handler:      router,
+		Handler:      ch(router),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
