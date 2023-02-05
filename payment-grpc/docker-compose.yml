@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     command: ./wait-for-postgres.sh paymentdb ./bin/api
     ports:
-      - "8080:8080"
+      - "50051:50051"
     environment:
       - POSTGRES_PASSWORD=postgres
     depends_on:
