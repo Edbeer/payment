@@ -25,8 +25,11 @@ migrate-up:
 migrate-down:
 	migrate -path ./migrations -database "postgres://postgres:postgres@localhost:5432/authdb?sslmode=disable" down
 
-run:
-	go run main.go
+build:
+	@go build -o ./bin/api
+
+run: build
+	@./bin/api
 
 mockClient:
 	mockgen github.com/Edbeer/auth-grpc/proto AuthServiceClient > client/mock/client_mock.go

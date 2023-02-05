@@ -6,7 +6,7 @@ import (
 )
 
 func NewPostgresDB() (*sql.DB, error) {
-	connString := "host=localhost user=postgres password=postgres dbname=authdb sslmode=disable"
+	connString := "host=authdb user=postgres password=postgres dbname=authdb sslmode=disable"
 	db, err := sql.Open("postgres", connString)
 	if err != nil {
 		return nil, err
