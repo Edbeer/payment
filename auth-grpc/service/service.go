@@ -5,8 +5,10 @@ import (
 	"context"
 	"io"
 
-	authpb "github.com/Edbeer/auth-grpc/proto"
-	"github.com/Edbeer/auth-grpc/types"
+	"github.com/Edbeer/auth/pkg/utils"
+	authpb "github.com/Edbeer/auth/proto"
+	"github.com/Edbeer/auth/types"
+	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -23,18 +25,26 @@ type Storage interface {
 	UpdateStatement(ctx context.Context, req *authpb.StatementRequest) ([]string, error)
 }
 
-type AuthService struct {
-	authpb.UnimplementedAuthServiceServer
-	storage Storage
+type RedisStorage interface {
+	CreateSession(ctx context.Context, session *types.Session, expire int) (string, error)
+	GetUserID(ctx context.Context, refreshToken string) (uuid.UUID, error)
+	DeleteSession(ctx context.Context, refreshToken string) error
 }
 
-func NewAuthService(storage Storage) *AuthService {
+type AuthService struct {
+	authpb.UnimplementedAuthServiceServer
+	redisStorage RedisStorage
+	storage      Storage
+}
+
+func NewAuthService(storage Storage, redisStorage RedisStorage) *AuthService {
 	return &AuthService{
-		storage: storage,
+		storage:      storage,
+		redisStorage: redisStorage,
 	}
 }
 
-func (s *AuthService) CreateAccount(ctx context.Context, req *authpb.CreateRequest) (*authpb.Account, error) {
+func (s *AuthService) CreateAccount(ctx context.Context, req *authpb.CreateRequest) (*authpb.AccountWithTokens, error) {
 	accReq := &authpb.CreateRequest{
 		FirstName:        req.FirstName,
 		LastName:         req.LastName,
@@ -49,7 +59,20 @@ func (s *AuthService) CreateAccount(ctx context.Context, req *authpb.CreateReque
 		return nil, err
 	}
 
-	return accountToProto(account), nil
+	accessToken, err := utils.CreateJWT(account)
+	if err != nil {
+		return nil, err
+	}
+
+	// refreshToken
+	refreshToken, err := s.redisStorage.CreateSession(ctx, &types.Session{
+		UserID: account.ID,
+	}, 86400)
+	if err != nil {
+		return nil, err
+	}
+
+	return accAndTokenToProto(account, accessToken, refreshToken), nil
 }
 
 func (s *AuthService) GetAccount(req *authpb.GetRequest, stream authpb.AuthService_GetAccountServer) error {
@@ -160,6 +183,72 @@ func (s *AuthService) GetStatement(req *authpb.StatementGet, stream authpb.AuthS
 	return nil
 }
 
+func (s *AuthService) SignIn(ctx context.Context, req *authpb.LoginRequest) (*authpb.AccountWithTokens, error) {
+	account, err := s.storage.GetAccountByID(ctx, &authpb.GetIDRequest{
+		Id: req.Id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken, err := utils.CreateJWT(account)
+	if err != nil {
+		return nil, err
+	}
+
+	// refreshToken
+	refreshToken, err := s.redisStorage.CreateSession(ctx, &types.Session{
+		UserID: account.ID,
+	}, 86400)
+	if err != nil {
+		return nil, err
+	}
+
+	return accAndTokenToProto(account, accessToken, refreshToken), nil
+}
+
+func (s *AuthService) SignOut(ctx context.Context, req *authpb.QuitRequest) (*authpb.QuitResponse, error) {
+	err := s.redisStorage.DeleteSession(ctx, req.RefreshToken)
+	if err != nil {
+		return nil, err
+	}	
+	return &authpb.QuitResponse{
+		Message: "sign-out",
+	}, err	
+}
+
+func (s *AuthService) RefreshTokens(ctx context.Context, req *authpb.RefreshRequest) (*authpb.Tokens, error) {
+	uid, err := s.redisStorage.GetUserID(ctx, req.RefreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	account, err := s.storage.GetAccountByID(ctx, &authpb.GetIDRequest{
+		Id: uid.String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// jwt-token
+	tokenString, err := utils.CreateJWT(account)
+	if err != nil {
+		return nil, err
+	}
+	// refreshToken
+	refreshToken, err := s.redisStorage.CreateSession(ctx, &types.Session{
+		UserID: account.ID,
+	}, 86400)
+	if err != nil {
+		return nil, err
+	}
+
+	return &authpb.Tokens{
+		AccessToken:  tokenString,
+		RefreshToken: refreshToken,
+	}, nil
+}
+
 func accountToProto(acc *types.Account) *authpb.Account {
 	return &authpb.Account{
 		Id:               acc.ID.String(),
@@ -172,5 +261,24 @@ func accountToProto(acc *types.Account) *authpb.Account {
 		Balance:          acc.Balance,
 		BlockedMoney:     acc.BlockedMoney,
 		CreatedAt:        timestamppb.New(acc.CreatedAt),
+	}
+}
+
+func accAndTokenToProto(acc *types.Account, accessToken, refreshToken string) *authpb.AccountWithTokens {
+	return &authpb.AccountWithTokens{
+		Account: &authpb.Account{
+			Id:               acc.ID.String(),
+			FirstName:        acc.FirstName,
+			LastName:         acc.LastName,
+			CardNumber:       acc.CardNumber,
+			CardExpiryMonth:  acc.CardExpiryMonth,
+			CardExpiryYear:   acc.CardExpiryYear,
+			CardSecurityCode: acc.CardSecurityCode,
+			Balance:          acc.Balance,
+			BlockedMoney:     acc.BlockedMoney,
+			CreatedAt:        timestamppb.New(acc.CreatedAt),
+		},
+		AccessToken: accessToken,
+		RefreshToken: refreshToken,
 	}
 }

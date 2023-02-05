@@ -8,10 +8,12 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	mockclient "github.com/Edbeer/auth-grpc/client/mock"
-	authpb "github.com/Edbeer/auth-grpc/proto"
-	mockstore "github.com/Edbeer/auth-grpc/service/mock"
-	"github.com/Edbeer/auth-grpc/types"
+	mockclient "github.com/Edbeer/auth/client/mock"
+	authpb "github.com/Edbeer/auth/proto"
+	mockstore "github.com/Edbeer/auth/service/mock"
+	"github.com/Edbeer/auth/types"
+	// "github.com/alicebob/miniredis"
+	// "github.com/go-redis/redis"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -28,7 +30,9 @@ func Test_CreateAccount(t *testing.T) {
 	defer db.Close()
 
 	mockStorage := mockstore.NewMockStorage(ctrl)
-	mockService := NewAuthService(mockStorage)
+	mockRedis := mockstore.NewMockRedisStorage(ctrl)
+
+	mockService := NewAuthService(mockStorage, mockRedis)
 
 	req := &authpb.CreateRequest{
 		FirstName:        "Pasha",
@@ -53,10 +57,17 @@ func Test_CreateAccount(t *testing.T) {
 	}
 	mockStorage.EXPECT().CreateAccount(context.Background(), gomock.Eq(req)).Return(acc, nil).AnyTimes()
 
+	sess := &types.Session{
+		UserID: reqAcc.ID,
+	}
+	token := "refresh-token"
+	mockRedis.EXPECT().CreateSession(context.Background(), gomock.Eq(sess), 86400).Return(token, nil)
+
+
 	account, err := mockService.CreateAccount(context.Background(), req)
 	require.NoError(t, err)
 	require.Nil(t, err)
-	require.Equal(t, accountToProto(acc), account)
+	require.Equal(t, accountToProto(acc), account.Account)
 }
 
 func Test_UpdateAccount(t *testing.T) {
@@ -70,7 +81,7 @@ func Test_UpdateAccount(t *testing.T) {
 	defer db.Close()
 
 	mockStorage := mockstore.NewMockStorage(ctrl)
-	mockService := NewAuthService(mockStorage)
+	mockService := NewAuthService(mockStorage, nil)
 
 	uid := uuid.New()
 	reqToUpdate := &authpb.UpdateRequest{
@@ -111,8 +122,18 @@ func Test_DeleteAccount(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	// mr, err := miniredis.Run()
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// client := redis.NewClient(&redis.Options{
+	// 	Addr: mr.Addr(),
+	// })
+
 	mockStorage := mockstore.NewMockStorage(ctrl)
-	mockService := NewAuthService(mockStorage)
+	mockRedis := mockstore.NewMockRedisStorage(ctrl)
+
+	mockService := NewAuthService(mockStorage, mockRedis)
 
 	req := &authpb.DeleteRequest{
 		Id: uuid.New().String(),
@@ -121,6 +142,8 @@ func Test_DeleteAccount(t *testing.T) {
 		Status: "Account was deleted",
 	}
 	mockStorage.EXPECT().DeleteAccount(context.Background(), req).Return(resp, nil).AnyTimes()
+
+
 
 	result, err := mockService.DeleteAccount(context.Background(), req)
 	require.NoError(t, err)
@@ -134,7 +157,7 @@ func Test_DepositAccount(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockStorage := mockstore.NewMockStorage(ctrl)
-	mockService := NewAuthService(mockStorage)
+	mockService := NewAuthService(mockStorage, nil)
 
 	reqDep := &authpb.DepositRequest{
 		CardNumber: "4444444444444444",
@@ -159,7 +182,7 @@ func Test_UpdateBalance(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockStorage := mockstore.NewMockStorage(ctrl)
-	mockService := NewAuthService(mockStorage)
+	mockService := NewAuthService(mockStorage, nil)
 
 	req := &authpb.UpdateBalanceRequest{
 		Id:           uuid.New().String(),
@@ -198,7 +221,7 @@ func Test_GetAccountByID(t *testing.T) {
 	defer db.Close()
 
 	mockStorage := mockstore.NewMockStorage(ctrl)
-	mockService := NewAuthService(mockStorage)
+	mockService := NewAuthService(mockStorage, nil)
 
 	req := &authpb.GetIDRequest{
 		Id: uuid.New().String(),
@@ -227,45 +250,6 @@ func Test_GetAccountByID(t *testing.T) {
 	require.Equal(t, account.BlockedMoney, acc.BlockedMoney)
 }
 
-func Test_Balance(t *testing.T) {
-
-	t.Parallel()
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	storage := mockstore.NewMockStorage(ctrl)
-	service := NewAuthService(storage)
-
-	req := &authpb.CreateRequest{
-		FirstName:        "Pasha",
-		LastName:         "Volkov",
-		CardNumber:       "4444444444444444",
-		CardExpiryMonth:  "12",
-		CardExpiryYear:   "24",
-		CardSecurityCode: "123",
-	}
-	reqAcc := types.NewAccount(req)
-	acc := &types.Account{
-		ID:               reqAcc.ID,
-		FirstName:        "Pasha",
-		LastName:         "Volkov",
-		CardNumber:       "4444444444444444",
-		CardExpiryMonth:  "12",
-		CardExpiryYear:   "24",
-		CardSecurityCode: "123",
-		Balance:          0,
-		BlockedMoney:     0,
-		CreatedAt:        time.Now(),
-	}
-	storage.EXPECT().CreateAccount(context.Background(), gomock.Eq(req)).Return(acc, nil).AnyTimes()
-
-	account, err := service.CreateAccount(context.Background(), req)
-	require.NoError(t, err)
-	require.Nil(t, err)
-	require.Equal(t, accountToProto(acc), account)
-}
-
 func Test_GetAccount(t *testing.T) {
 	t.Parallel()
 
@@ -273,7 +257,7 @@ func Test_GetAccount(t *testing.T) {
 	defer ctrl.Finish()
 
 	storage := mockstore.NewMockStorage(ctrl)
-	service := NewAuthService(storage)
+	service := NewAuthService(storage, nil)
 	acc1 := &types.Account{
 		ID:               uuid.New(),
 		FirstName:        "Pasha",
@@ -329,7 +313,7 @@ func Test_CreateStatement(t *testing.T) {
 	defer ctrl.Finish()
 
 	storage := mockstore.NewMockStorage(ctrl)
-	service := NewAuthService(storage)
+	service := NewAuthService(storage, nil)
 
 	req1 := &authpb.StatementRequest{
 		AccountId: uuid.New().String(),
@@ -365,7 +349,7 @@ func Test_GetStatement(t *testing.T) {
 	defer ctrl.Finish()
 
 	storage := mockstore.NewMockStorage(ctrl)
-	service := NewAuthService(storage)
+	service := NewAuthService(storage, nil)
 
 	req := &authpb.StatementGet{
 		AccountId: uuid.New().String(),
@@ -413,4 +397,129 @@ func Test_GetStatement(t *testing.T) {
 	err := service.GetStatement(req, streamServer)
 	require.NoError(t, err)
 	require.Nil(t, err)
+}
+
+func Test_RefreshTokens(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	db, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	mockStorage := mockstore.NewMockStorage(ctrl)
+	mockRedis := mockstore.NewMockRedisStorage(ctrl)
+
+	mockService := NewAuthService(mockStorage, mockRedis)
+
+	req := &authpb.RefreshRequest{
+		RefreshToken: "cookieValue",
+	}
+
+	uid := uuid.New()
+	mockRedis.EXPECT().GetUserID(context.Background(), req.RefreshToken).Return(uid, nil).AnyTimes()
+
+	account := &types.Account{
+		ID:               uid,
+		FirstName:        "Pasha1",
+		LastName:         "volkov1",
+		CardNumber:       "4444444444444444",
+		CardExpiryMonth:  "12",
+		CardExpiryYear:   "24",
+		CardSecurityCode: "924",
+		Balance:          0,
+		BlockedMoney:     0,
+		Statement:        []string{},
+		CreatedAt:        time.Now(),
+	}
+
+	mockStorage.EXPECT().GetAccountByID(context.Background(), gomock.Any()).Return(account, nil).AnyTimes()
+
+	token := "refresh-token"
+	sess := &types.Session{
+		UserID: uid,
+	}
+	mockRedis.EXPECT().CreateSession(context.Background(), gomock.Eq(sess), 86400).Return(token, nil).AnyTimes()
+
+
+	tokens, err := mockService.RefreshTokens(context.Background(), req)
+	require.NoError(t, err)
+	require.Nil(t, err)
+	require.NotNil(t, tokens)
+}
+
+func Test_SignIn(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	db, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	mockStorage := mockstore.NewMockStorage(ctrl)
+	mockRedis := mockstore.NewMockRedisStorage(ctrl)
+
+	mockService := NewAuthService(mockStorage, mockRedis)
+	uid := uuid.New()
+
+	req := &authpb.LoginRequest{
+		Id: uid.String(),
+	}
+
+	account := &types.Account{
+		ID:               uid,
+		FirstName:        "Pasha1",
+		LastName:         "volkov1",
+		CardNumber:       "4444444444444444",
+		CardExpiryMonth:  "12",
+		CardExpiryYear:   "24",
+		CardSecurityCode: "924",
+		Balance:          0,
+		BlockedMoney:     0,
+		Statement:        []string{},
+		CreatedAt:        time.Now(),
+	}
+
+	mockStorage.EXPECT().GetAccountByID(context.Background(), gomock.Any()).Return(account, nil).AnyTimes()
+	sess := &types.Session{
+		UserID: uid,
+	}
+	token := "refresh-token"
+	mockRedis.EXPECT().CreateSession(context.Background(), gomock.Eq(sess), 86400).Return(token, nil).AnyTimes()
+
+	accWithTokens, err := mockService.SignIn(context.Background(), req)
+	require.NoError(t, err)
+	require.Nil(t, err)
+	require.NotNil(t, accWithTokens)
+}
+
+func Test_SignOut(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	db, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	mockStorage := mockstore.NewMockStorage(ctrl)
+	mockRedis := mockstore.NewMockRedisStorage(ctrl)
+
+	mockService := NewAuthService(mockStorage, mockRedis)
+
+	cookieValue := "cookieValue"
+
+	mockRedis.EXPECT().DeleteSession(context.Background(), gomock.Eq(cookieValue)).Return(nil).AnyTimes()
+
+	message, err := mockService.SignOut(context.Background(), &authpb.QuitRequest{
+		RefreshToken: cookieValue,
+	})
+	require.NoError(t, err)
+	require.Nil(t, err)
+	require.Equal(t, message.Message, "sign-out")
 }

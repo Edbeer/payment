@@ -4,21 +4,32 @@ import (
 	"log"
 	"net"
 
-	"github.com/Edbeer/auth-grpc/pkg/db"
-	authpb "github.com/Edbeer/auth-grpc/proto"
-	"github.com/Edbeer/auth-grpc/service"
-	"github.com/Edbeer/auth-grpc/storage"
+	"github.com/Edbeer/auth/pkg/db/psql"
+	red "github.com/Edbeer/auth/pkg/db/redis"
+	authpb "github.com/Edbeer/auth/proto"
+	"github.com/Edbeer/auth/service"
+	"github.com/Edbeer/auth/storage/psql"
+	"github.com/Edbeer/auth/storage/redis"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 func main() {
-	db, err := db.NewPostgresDB()
+	// postgres db
+	db, err := postgres.NewPostgresDB()
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
+	// redis
+	redisClient := red.NewRedisClient()
+	defer redisClient.Close()
+	log.Println("init redis")
+
 	storage := storage.NewPostgresStorage(db)
-	srv := service.NewAuthService(storage)
+	redis := redisrepo.NewRedisStorage(redisClient)
+
+	srv := service.NewAuthService(storage, redis)
 	
 	server := grpc.NewServer(grpc.MaxConcurrentStreams(1000))
 

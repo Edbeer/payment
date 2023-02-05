@@ -4,7 +4,7 @@ import (
 	"log"
 	"net"
 
-	authpb "github.com/Edbeer/auth-grpc/proto"
+	authpb "github.com/Edbeer/auth/proto"
 	"github.com/Edbeer/payment-grpc/pkg/db"
 	paymentpb "github.com/Edbeer/payment-grpc/proto"
 	"github.com/Edbeer/payment-grpc/service"

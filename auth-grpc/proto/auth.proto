@@ -7,7 +7,10 @@ option go_package = "github.com/Edbeer/auth-grpc/proto;authpb";
 import "google/protobuf/timestamp.proto";
 
 service AuthService {
-    rpc CreateAccount(CreateRequest) returns (Account) {};
+    rpc CreateAccount(CreateRequest) returns (AccountWithTokens) {};
+    rpc SignIn(LoginRequest) returns (AccountWithTokens) {};
+    rpc SignOut(QuitRequest) returns (QuitResponse) {};
+    rpc RefreshTokens(RefreshRequest) returns (Tokens) {};
     rpc GetAccount(GetRequest) returns (stream Account) {};
     rpc UpdateAccount(UpdateRequest) returns (Account) {};
     rpc DeleteAccount(DeleteRequest) returns (DeleteResponse) {};
@@ -17,6 +20,27 @@ service AuthService {
     rpc GetStatement(StatementGet) returns (stream Statement) {};
     rpc CreateStatement(stream StatementRequest) returns (stream StatementResponse) {};
     rpc UpdateBalance(UpdateBalanceRequest) returns (Account) {};
+}
+
+message LoginRequest {
+    string id = 1;
+}
+
+message QuitRequest {
+    string refresh_token = 1;
+}
+
+message QuitResponse {
+    string message = 1;
+}
+
+message RefreshRequest {
+    string refresh_token = 1;
+}
+
+message Tokens {
+    string access_token = 1;
+    string refresh_token = 2;
 }
 
 message UpdateBalanceRequest {
@@ -94,6 +118,12 @@ message Account {
     uint64 blocked_money = 9;
     repeated string statement  = 10;
     google.protobuf.Timestamp created_at = 11;
+}
+
+message AccountWithTokens {
+    Account account = 1;
+    string access_token = 2;
+    string refresh_token = 3;
 }
 
 message Statement {

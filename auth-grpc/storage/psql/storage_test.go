@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	authpb "github.com/Edbeer/auth-grpc/proto"
-	"github.com/Edbeer/auth-grpc/types"
+	authpb "github.com/Edbeer/auth/proto"
+	"github.com/Edbeer/auth/types"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
