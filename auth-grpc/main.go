@@ -4,12 +4,12 @@ import (
 	"log"
 	"net"
 
-	"github.com/Edbeer/auth-grpc/pkg/db/psql"
-	red "github.com/Edbeer/auth-grpc/pkg/db/redis"
-	authpb "github.com/Edbeer/auth-grpc/proto"
-	"github.com/Edbeer/auth-grpc/service"
-	"github.com/Edbeer/auth-grpc/storage/psql"
-	"github.com/Edbeer/auth-grpc/storage/redis"
+	"github.com/Edbeer/auth/pkg/db/psql"
+	red "github.com/Edbeer/auth/pkg/db/redis"
+	authpb "github.com/Edbeer/auth/proto"
+	"github.com/Edbeer/auth/service"
+	"github.com/Edbeer/auth/storage/psql"
+	"github.com/Edbeer/auth/storage/redis"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )

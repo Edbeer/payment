@@ -5,9 +5,9 @@ import (
 	"context"
 	"io"
 
-	"github.com/Edbeer/auth-grpc/pkg/utils"
-	authpb "github.com/Edbeer/auth-grpc/proto"
-	"github.com/Edbeer/auth-grpc/types"
+	"github.com/Edbeer/auth/pkg/utils"
+	authpb "github.com/Edbeer/auth/proto"
+	"github.com/Edbeer/auth/types"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

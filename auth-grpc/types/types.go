@@ -3,7 +3,7 @@ package types
 import (
 	"time"
 
-	authpb "github.com/Edbeer/auth-grpc/proto"
+	authpb "github.com/Edbeer/auth/proto"
 	"github.com/google/uuid"
 )
 

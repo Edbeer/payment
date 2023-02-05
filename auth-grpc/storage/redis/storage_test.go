@@ -5,7 +5,7 @@ import (
 	"log"
 	"testing"
 
-	"github.com/Edbeer/auth-grpc/types"
+	"github.com/Edbeer/auth/types"
 	"github.com/alicebob/miniredis"
 	"github.com/go-redis/redis/v9"
 	"github.com/google/uuid"

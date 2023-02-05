@@ -3,7 +3,7 @@ package utils
 import (
 	"os"
 
-	"github.com/Edbeer/auth-grpc/types"
+	"github.com/Edbeer/auth/types"
 	"github.com/golang-jwt/jwt/v4"
 )
 

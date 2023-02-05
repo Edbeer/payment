@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+  payment:
+    container_name: payment
+    build:
+      dockerfile: Dockerfile
+    command: ./wait-for-postgres.sh paymentdb ./bin/api
+    ports:
+      - "8080:8080"
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    depends_on:
+      - paymentdb
+    restart: always
+    networks:
+      - backend
+  
+  paymentdb:
+    image: postgres:15.1
+    container_name: paymentdb
+    ports:
+      - "5436:5432"
+    environment:
+      - POSTGRES_HOST=paymentdb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=paymentdb
+      - PGDATA = "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - ./migrations/000001_paymentdb.up.sql:/docker-entrypoint-initdb.d/initdb.sql
+      - ./pgdata:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - backend
+
+volumes:
+  pgdata:
+networks:
+  backend:
+    driver: bridge

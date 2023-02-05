@@ -5,7 +5,7 @@ import (
 	"context"
 	"database/sql"
 
-	authpb "github.com/Edbeer/auth-grpc/proto"
+	authpb "github.com/Edbeer/auth/proto"
 	paymentpb "github.com/Edbeer/payment-grpc/proto"
 	"github.com/Edbeer/payment-grpc/types"
 )

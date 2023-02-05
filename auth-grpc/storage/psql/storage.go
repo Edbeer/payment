@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 
-	authpb "github.com/Edbeer/auth-grpc/proto"
-	"github.com/Edbeer/auth-grpc/types"
+	authpb "github.com/Edbeer/auth/proto"
+	"github.com/Edbeer/auth/types"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )

@@ -1,7 +1,7 @@
 package auth
 
 import (
-	authpb "github.com/Edbeer/auth-grpc/proto"
+	authpb "github.com/Edbeer/auth/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

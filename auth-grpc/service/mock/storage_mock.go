@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	authpb "github.com/Edbeer/auth-grpc/proto"
-	types "github.com/Edbeer/auth-grpc/types"
+	authpb "github.com/Edbeer/auth/proto"
+	types "github.com/Edbeer/auth/types"
 	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"
 )
