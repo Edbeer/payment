@@ -1,7 +1,7 @@
 package payment
 
 import (
-	paymentpb "github.com/Edbeer/payment-grpc/proto"
+	paymentpb "github.com/Edbeer/payment-proto/payment-grpc/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

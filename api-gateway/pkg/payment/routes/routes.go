@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Edbeer/api-gateway/pkg/utils"
-	paymentpb "github.com/Edbeer/payment-grpc/proto"
+	paymentpb "github.com/Edbeer/payment-proto/payment-grpc/proto"
 	"github.com/google/uuid"
 )
 

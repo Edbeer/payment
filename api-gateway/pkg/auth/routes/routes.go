@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Edbeer/api-gateway/pkg/utils"
-	authpb "github.com/Edbeer/auth/proto"
+	authpb "github.com/Edbeer/payment-proto/auth-grpc/proto"
 )
 
 type CreateRequest struct {

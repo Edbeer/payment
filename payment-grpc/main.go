@@ -4,9 +4,9 @@ import (
 	"log"
 	"net"
 
-	authpb "github.com/Edbeer/auth/proto"
+	authpb "github.com/Edbeer/payment-proto/auth-grpc/proto"
 	"github.com/Edbeer/payment-grpc/pkg/db"
-	paymentpb "github.com/Edbeer/payment-grpc/proto"
+	paymentpb "github.com/Edbeer/payment-proto/payment-grpc/proto"
 	"github.com/Edbeer/payment-grpc/service"
 	"github.com/Edbeer/payment-grpc/storage"
 	"google.golang.org/grpc"

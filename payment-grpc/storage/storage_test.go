@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	authpb "github.com/Edbeer/auth/proto"
-	paymentpb "github.com/Edbeer/payment-grpc/proto"
+	authpb "github.com/Edbeer/payment-proto/auth-grpc/proto"
+	paymentpb "github.com/Edbeer/payment-proto/payment-grpc/proto"
 	"github.com/Edbeer/payment-grpc/types"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"

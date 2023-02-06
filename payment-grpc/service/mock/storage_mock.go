@@ -9,8 +9,8 @@ import (
 	sql "database/sql"
 	reflect "reflect"
 
-	proto "github.com/Edbeer/payment-grpc/proto"
 	types "github.com/Edbeer/payment-grpc/types"
+	paymentpb "github.com/Edbeer/payment-proto/payment-grpc/proto"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -38,7 +38,7 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 }
 
 // GetPaymentByID mocks base method.
-func (m *MockStorage) GetPaymentByID(ctx context.Context, req *proto.PaidRequest) (*types.Payment, error) {
+func (m *MockStorage) GetPaymentByID(ctx context.Context, req *paymentpb.PaidRequest) (*types.Payment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPaymentByID", ctx, req)
 	ret0, _ := ret[0].(*types.Payment)

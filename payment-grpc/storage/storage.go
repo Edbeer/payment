@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	paymentpb "github.com/Edbeer/payment-grpc/proto"
+	paymentpb "github.com/Edbeer/payment-proto/payment-grpc/proto"
 	"github.com/Edbeer/payment-grpc/types"
 	_ "github.com/lib/pq"
 )

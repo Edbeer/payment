@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	mock_proto "github.com/Edbeer/auth/client/mock"
-	authpb "github.com/Edbeer/auth/proto"
+	mock_proto "github.com/Edbeer/payment-proto/auth-grpc/client/mock"
+	authpb "github.com/Edbeer/payment-proto/auth-grpc/proto"
 
-	paymentpb "github.com/Edbeer/payment-grpc/proto"
+	paymentpb "github.com/Edbeer/payment-proto/payment-grpc/proto"
 	mockpay "github.com/Edbeer/payment-grpc/service/mock"
 
 	"github.com/Edbeer/payment-grpc/types"
