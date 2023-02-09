@@ -9,7 +9,7 @@ import (
 func NewRedisClient() *redis.Client {
 
 	client := redis.NewClient(&redis.Options{
-		Addr:         ":6379",
+		Addr:         "redis:6379",
 		MinIdleConns: 200,
 		PoolSize:     12000,
 		PoolTimeout:  time.Duration(240) * time.Second,
