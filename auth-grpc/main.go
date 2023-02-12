@@ -21,6 +21,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+	log.Println("init postgres")
 	// redis
 	redisClient := red.NewRedisClient()
 	defer redisClient.Close()
