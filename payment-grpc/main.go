@@ -26,7 +26,7 @@ func main() {
 	storage := storage.NewPostgresStorage(db)
 
 	// client
-	conn, err := grpc.Dial(":50052", grpc.WithInsecure())
+	conn, err := grpc.Dial("auth:50052", grpc.WithInsecure())
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -11,7 +11,7 @@ type PaymentClient struct {
 }
 
 func PaymentServiceClient() paymentpb.PaymentServiceClient {
-	conn, err := grpc.Dial(":50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial("payment:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil
 	}

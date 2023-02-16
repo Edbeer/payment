@@ -1,0 +1,523 @@
+definitions:
+  github.com_Edbeer_api-gateway_pkg_auth_routes.CreateRequest:
+    properties:
+      card_expiry_month:
+        type: string
+      card_expiry_year:
+        type: string
+      card_number:
+        type: string
+      card_security_code:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+    type: object
+  github.com_Edbeer_api-gateway_pkg_payment_routes.CreateRequest:
+    properties:
+      amount:
+        type: integer
+      card_expiry_month:
+        type: string
+      card_expiry_year:
+        type: string
+      card_number:
+        type: string
+      card_security_code:
+        type: string
+      currency:
+        type: string
+      customer_id:
+        type: string
+      merchant_id:
+        type: string
+    type: object
+  routes.DepositRequest:
+    properties:
+      balance:
+        type: integer
+      card_number:
+        type: string
+    type: object
+  routes.LoginRequest:
+    properties:
+      id:
+        type: string
+    type: object
+  routes.PaidRequest:
+    properties:
+      amount:
+        type: integer
+    type: object
+  routes.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  routes.Tokens:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  routes.UpdateRequest:
+    properties:
+      card_expiry_month:
+        type: string
+      card_expiry_year:
+        type: string
+      card_number:
+        type: string
+      card_security_code:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+    type: object
+  utils.ApiError:
+    properties:
+      error:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Simple payment system
+  title: API-Gateway
+  version: "1.0"
+paths:
+  /account:
+    get:
+      description: get all accounts, returns accounts
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+      summary: Get all accounts
+      tags:
+      - Account
+    post:
+      consumes:
+      - application/json
+      description: register new account, returns account
+      parameters:
+      - description: create account info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github.com_Edbeer_api-gateway_pkg_auth_routes.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+      summary: Create new account
+      tags:
+      - Account
+  /account/{id}:
+    delete:
+      description: delete account, returns status
+      parameters:
+      - description: delete account info
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: integer
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+      summary: Delete account
+      tags:
+      - Account
+    get:
+      description: get account by id, returns account
+      parameters:
+      - description: get account by id info
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+      summary: Get account by id
+      tags:
+      - Account
+    put:
+      consumes:
+      - application/json
+      description: update account, returns updated account
+      parameters:
+      - description: update account info
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: update account info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/routes.UpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+      summary: Update account
+      tags:
+      - Account
+  /account/deposit:
+    post:
+      consumes:
+      - application/json
+      description: deposit money to account, returns account
+      parameters:
+      - description: deposit account info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/routes.DepositRequest'
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+      summary: Deposit money
+      tags:
+      - Account
+  /account/refresh:
+    post:
+      consumes:
+      - application/json
+      description: refresh access and refresh tokens, returns tokens
+      parameters:
+      - description: refresh tokens account info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/routes.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.Tokens'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+      summary: Refresh tokens
+      tags:
+      - Account
+  /account/sign-in:
+    post:
+      consumes:
+      - application/json
+      description: log in to your account, returns account
+      parameters:
+      - description: login account info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/routes.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+      summary: Login
+      tags:
+      - Account
+  /account/sign-out:
+    post:
+      description: log out of your account, returns status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: integer
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+      summary: Logout
+      tags:
+      - Account
+  /account/statement/{id}:
+    get:
+      description: get account statement, returns statement
+      parameters:
+      - description: get statement info
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+      summary: Get account statement
+      tags:
+      - Account
+  /payment/auth:
+    post:
+      consumes:
+      - application/json
+      description: 'Create payment: Acceptance of payment'
+      parameters:
+      - description: create payment info
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: create payment info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github.com_Edbeer_api-gateway_pkg_payment_routes.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+      summary: Create payment
+      tags:
+      - Payment
+  /payment/cancel/{id}:
+    post:
+      consumes:
+      - application/json
+      description: 'Cancel payment: cancel authorization payment'
+      parameters:
+      - description: cancel payment info
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: cancel payment info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/routes.PaidRequest'
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+      summary: Cancel payment
+      tags:
+      - Payment
+  /payment/capture/{id}:
+    post:
+      consumes:
+      - application/json
+      description: 'Capture payment: Successful payment'
+      parameters:
+      - description: capture payment info
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: capture payment info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/routes.PaidRequest'
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+      summary: Capture payment
+      tags:
+      - Payment
+  /payment/refund/{id}:
+    post:
+      consumes:
+      - application/json
+      description: 'Refund: Refunded payment, if there is a refund'
+      parameters:
+      - description: refund payment info
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: refund payment info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/routes.PaidRequest'
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ApiError'
+      summary: Refund payment
+      tags:
+      - Payment
+securityDefinitions:
+  "":
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

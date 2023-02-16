@@ -18,6 +18,17 @@ type CreateRequest struct {
 	CardSecurityCode string `json:"card_security_code"`
 }
 
+// createAccount godoc
+// @Summary Create new account
+// @Description register new account, returns account
+// @Tags Account
+// @Accept json
+// @Produce json
+// @Param input body CreateRequest true "create account info"
+// @Failure 400  {object}  utils.ApiError
+// @Failure 404  {object}  utils.ApiError
+// @Failure 500  {object}  utils.ApiError
+// @Router /account [post]
 func CreateAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
 	req := &CreateRequest{}
 
@@ -62,6 +73,18 @@ type Tokens struct {
 	AccessToken    string `json:"access_token"`
 }
 
+// refreshTokens godoc
+// @Summary Refresh tokens
+// @Description refresh access and refresh tokens, returns tokens
+// @Tags Account
+// @Accept json
+// @Produce json
+// @Param input body RefreshRequest true "refresh tokens account info"
+// @Success 200 {object} Tokens
+// @Failure 400  {object}  utils.ApiError
+// @Failure 404  {object}  utils.ApiError
+// @Failure 500  {object}  utils.ApiError
+// @Router /account/refresh [post]
 func RefreshTokens(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
 	req := &RefreshRequest{}
 
@@ -100,6 +123,17 @@ type LoginRequest struct {
 	Id string `json:"id"`
 }
 
+// signIn godoc
+// @Summary Login
+// @Description log in to your account, returns account
+// @Tags Account
+// @Accept json
+// @Produce json
+// @Param input body LoginRequest true "login account info"
+// @Failure 400  {object}  utils.ApiError
+// @Failure 404  {object}  utils.ApiError
+// @Failure 500  {object}  utils.ApiError
+// @Router /account/sign-in [post]
 func SignIn(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
 	req := &LoginRequest{}
 
@@ -130,6 +164,17 @@ func SignIn(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient)
 	return utils.WriteJSON(w, http.StatusOK, accountWithToken.Account)
 }
 
+
+// signOut godoc
+// @Summary Logout
+// @Description log out of your account, returns status
+// @Tags Account
+// @Produce json
+// @Success 200 {integer} 200
+// @Failure 400  {object}  utils.ApiError
+// @Failure 404  {object}  utils.ApiError
+// @Failure 500  {object}  utils.ApiError
+// @Router /account/sign-out [post]
 func SignOut(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
 	cookie, err := r.Cookie("refresh-token")
 	if err != nil {
@@ -154,6 +199,18 @@ type UpdateRequest struct {
 	CardSecurityCode string `json:"card_security_code"`
 }
 
+// updateAccount godoc
+// @Summary Update account
+// @Description update account, returns updated account
+// @Tags Account
+// @Accept json
+// @Produce json
+// @Param id path string true "update account info"
+// @Param input body UpdateRequest true "update account info"
+// @Failure 400  {object}  utils.ApiError
+// @Failure 404  {object}  utils.ApiError
+// @Failure 500  {object}  utils.ApiError
+// @Router /account/{id} [put]
 func UpdateAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
 	uuid, err := utils.GetUUID(r)
 	if err != nil {
@@ -182,6 +239,17 @@ func UpdateAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthService
 	return utils.WriteJSON(w, http.StatusOK, account)
 }
 
+// deleteAccount godoc
+// @Summary Delete account
+// @Description delete account, returns status
+// @Tags Account
+// @Produce json
+// @Param id path string true "delete account info"
+// @Success 200 {integer} 200
+// @Failure 400  {object}  utils.ApiError
+// @Failure 404  {object}  utils.ApiError
+// @Failure 500  {object}  utils.ApiError
+// @Router /account/{id} [delete]
 func DeleteAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
 	uuid, err := utils.GetUUID(r)
 	if err != nil {
@@ -204,6 +272,17 @@ type DepositRequest struct {
 	Balance    uint64 `json:"balance"`
 }
 
+// depositAccount godoc
+// @Summary Deposit money
+// @Description deposit money to account, returns account
+// @Tags Account
+// @Accept json
+// @Produce json
+// @Param input body DepositRequest true "deposit account info"
+// @Failure 400  {object}  utils.ApiError
+// @Failure 404  {object}  utils.ApiError
+// @Failure 500  {object}  utils.ApiError
+// @Router /account/deposit [post]
 func DepositAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
 	req := &DepositRequest{}
 
@@ -222,6 +301,16 @@ func DepositAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthServic
 	return utils.WriteJSON(w, http.StatusOK, status)
 }
 
+// getAccountByID godoc
+// @Summary Get account by id
+// @Description get account by id, returns account
+// @Tags Account
+// @Produce json
+// @Param id path string true "get account by id info"
+// @Failure 400  {object}  utils.ApiError
+// @Failure 404  {object}  utils.ApiError
+// @Failure 500  {object}  utils.ApiError
+// @Router /account/{id} [get]
 func GetAccountByID(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
 	uuid, err := utils.GetUUID(r)
 	if err != nil {
@@ -238,32 +327,15 @@ func GetAccountByID(w http.ResponseWriter, r *http.Request, cc authpb.AuthServic
 	return utils.WriteJSON(w, http.StatusOK, account)
 }
 
-// type UpdateBalanceRequest struct {
-// 	Id           uuid.UUID `json:"id"`
-// 	Balance      uint64    `json:"balance"`
-// 	BlockedMoney uint64    `json:"blocked_money"`
-// }
-
-// // TODO remove
-// func UpdateBalance(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
-// 	req := &UpdateBalanceRequest{}
-
-// 	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-// 		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
-// 	}
-
-// 	account, err := cc.UpdateBalance(r.Context(), &authpb.UpdateBalanceRequest{
-// 		Id:           req.Id.String(),
-// 		Balance:      req.Balance,
-// 		BlockedMoney: req.BlockedMoney,
-// 	})
-// 	if err != nil {
-// 		return utils.WriteJSON(w, http.StatusBadRequest, utils.ApiError{Error: err.Error()})
-// 	}
-
-// 	return utils.WriteJSON(w, http.StatusOK, account)
-// }
-
+// getAccount godoc
+// @Summary Get all accounts
+// @Description get all accounts, returns accounts
+// @Tags Account
+// @Produce json
+// @Failure 400  {object}  utils.ApiError
+// @Failure 404  {object}  utils.ApiError
+// @Failure 500  {object}  utils.ApiError
+// @Router /account [get]
 func GetAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
 	stream, err := cc.GetAccount(r.Context(), &authpb.GetRequest{})
 	if err != nil {
@@ -285,6 +357,16 @@ func GetAccount(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceCli
 	return utils.WriteJSON(w, http.StatusOK, accounts)
 }
 
+// getStatement godoc
+// @Summary Get account statement
+// @Description get account statement, returns statement
+// @Tags Account
+// @Produce json
+// @Param id path string true "get statement info"
+// @Failure 400  {object}  utils.ApiError
+// @Failure 404  {object}  utils.ApiError
+// @Failure 500  {object}  utils.ApiError
+// @Router /account/statement/{id} [get]
 func GetStatement(w http.ResponseWriter, r *http.Request, cc authpb.AuthServiceClient) error {
 	uuid, err := utils.GetUUID(r)
 	if err != nil {
