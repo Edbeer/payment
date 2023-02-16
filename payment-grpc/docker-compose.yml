@@ -14,7 +14,9 @@ services:
       - paymentdb
     restart: always
     networks:
-      - backend
+      - payment-grpc_backend
+      - auth-grpc_backend
+      - api-gateway_backend
   
   paymentdb:
     image: postgres:15.1
@@ -32,10 +34,15 @@ services:
       - ./pgdata:/var/lib/postgresql/data
     restart: always
     networks:
-      - backend
+      - payment-grpc_backend
 
 volumes:
   pgdata:
 networks:
-  backend:
+  payment-grpc_backend:
     driver: bridge
+    external: true
+  auth-grpc_backend:
+    external: true
+  api-gateway_backend:
+    external: true

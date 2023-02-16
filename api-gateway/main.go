@@ -13,14 +13,27 @@ import (
 	"github.com/Edbeer/api-gateway/pkg/payment"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/handlers"
+	_ "github.com/Edbeer/api-gateway/docs"
+	"github.com/swaggo/http-swagger"
 )
 
+// @title           API-Gateway
+// @version         1.0
+// @description     Simple payment system
+
+// @securitydefinitions.apikey
+// @in header
+// @name Authorization
 func main() {
 	router := mux.NewRouter()
 
+	// auth
 	auth.RegisterAuthRoutes(router)
+	// payment
 	payment.RegisterPaymentRouter(router)
 	
+	// SWAGGER
+	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 	// in development mode, there will be "*"
 	ch := handlers.CORS(handlers.AllowedOrigins([]string{"*"}))
 	server := &http.Server{

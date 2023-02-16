@@ -20,6 +20,18 @@ type CreateRequest struct {
 	Amount           uint64    `json:"amount"`
 }
 
+// createPayment godoc
+// @Summary Create payment
+// @Description Create payment: Acceptance of payment
+// @Tags Payment
+// @Accept json
+// @Produce json
+// @Param id path string true "create payment info"
+// @Param input body CreateRequest true "create payment info"
+// @Failure 400  {object}  utils.ApiError
+// @Failure 404  {object}  utils.ApiError
+// @Failure 500  {object}  utils.ApiError
+// @Router /payment/auth [post]
 func CreatePayment(w http.ResponseWriter, r *http.Request, cc paymentpb.PaymentServiceClient) error {
 	req := &CreateRequest{}
 
@@ -48,6 +60,18 @@ type PaidRequest struct {
 	Amount    uint64    `json:"amount"`
 }
 
+// capturePayment godoc
+// @Summary Capture payment
+// @Description Capture payment: Successful payment
+// @Tags Payment
+// @Accept json
+// @Produce json
+// @Param id path string true "capture payment info"
+// @Param input body PaidRequest true "capture payment info"
+// @Failure 400  {object}  utils.ApiError
+// @Failure 404  {object}  utils.ApiError
+// @Failure 500  {object}  utils.ApiError
+// @Router /payment/capture/{id} [post]
 func CapturePayment(w http.ResponseWriter, r *http.Request, cc paymentpb.PaymentServiceClient) error {
 	uuid, err := utils.GetUUID(r)
 	if err != nil {
@@ -70,6 +94,18 @@ func CapturePayment(w http.ResponseWriter, r *http.Request, cc paymentpb.Payment
 	return utils.WriteJSON(w, http.StatusOK, statement)
 }
 
+// cancelPayment godoc
+// @Summary Cancel payment
+// @Description Cancel payment: cancel authorization payment
+// @Tags Payment
+// @Accept json
+// @Produce json
+// @Param id path string true "cancel payment info"
+// @Param input body PaidRequest true "cancel payment info"
+// @Failure 400  {object}  utils.ApiError
+// @Failure 404  {object}  utils.ApiError
+// @Failure 500  {object}  utils.ApiError
+// @Router /payment/cancel/{id} [post]
 func CancelPayment(w http.ResponseWriter, r *http.Request, cc paymentpb.PaymentServiceClient) error {
 	uuid, err := utils.GetUUID(r)
 	if err != nil {
@@ -92,6 +128,18 @@ func CancelPayment(w http.ResponseWriter, r *http.Request, cc paymentpb.PaymentS
 	return utils.WriteJSON(w, http.StatusOK, statement)
 }
 
+// refundPayment godoc
+// @Summary Refund payment
+// @Description Refund: Refunded payment, if there is a refund
+// @Tags Payment
+// @Accept json
+// @Produce json
+// @Param id path string true "refund payment info"
+// @Param input body PaidRequest true "refund payment info"
+// @Failure 400  {object}  utils.ApiError
+// @Failure 404  {object}  utils.ApiError
+// @Failure 500  {object}  utils.ApiError
+// @Router /payment/refund/{id} [post]
 func RefundPayment(w http.ResponseWriter, r *http.Request, cc paymentpb.PaymentServiceClient) error {
 	uuid, err := utils.GetUUID(r)
 	if err != nil {

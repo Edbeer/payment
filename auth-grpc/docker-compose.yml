@@ -15,7 +15,9 @@ services:
       - redis
     restart: always
     networks:
-      - backend
+      - auth-grpc_backend
+      - payment-grpc_backend
+      - api-gateway_backend
   
   authdb:
     image: postgres:15.1
@@ -33,7 +35,7 @@ services:
       - ./pgdata:/var/lib/postgresql/data
     restart: always
     networks:
-      - backend
+      - auth-grpc_backend
 
   redis:
     image: redis:7.0
@@ -46,10 +48,15 @@ services:
       - REDIS_PASSWORD=examplepass
     restart: always
     networks:
-      - backend
+      - auth-grpc_backend
 
 volumes:
   pgdata:
 networks:
-  backend:
+  auth-grpc_backend:
     driver: bridge
+    external: true
+  payment-grpc_backend:
+    external: true
+  api-gateway_backend:
+    external: true

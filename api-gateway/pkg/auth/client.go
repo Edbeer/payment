@@ -11,7 +11,7 @@ type AuthClient struct {
 }
 
 func AuthServiceClient() authpb.AuthServiceClient {
-	conn, err := grpc.Dial(":50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial("auth:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil
 	}
